@@ -1,0 +1,25 @@
+
+spring:
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 15MB
+  mongodb:
+    uri: "${MONGODB_URI:mongodb+srv://awantha:ABdgpqSthXmK1k8K@cluster0wolfenox.aza9jrr.mongodb.net/smart_campus_dev_3d3}"
+  data:
+    mongodb:
+      auto-index-creation: true
+
+
+app:
+  cors:
+    allowed-origin-patterns: ${CORS_ALLOWED_ORIGIN_PATTERNS:http://localhost:*,http://127.0.0.1:*}
+  jwt:
+    secret: change-me-in-prod
+    expiration-seconds: 3600
+  auth:
+    seed-admin: true
+    admin-registration-code: ${ADMIN_REGISTRATION_CODE:ADMIN-ACCESS-2026}
+    sub-admin-registration-code: ${SUB_ADMIN_REGISTRATION_CODE:SUPPORT-ACCESS-2026}
+
+
