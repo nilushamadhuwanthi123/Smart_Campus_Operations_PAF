@@ -1,0 +1,135 @@
+/* @import url() FONT IMPORTS MUST ALWAYS BE AT THE VERY TOP OF THIS FILE, ABOVE THE TAILWIND IMPORTS - DO NOT DELETE THIS COMMENT */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&display=swap');
+
+/* CRITICAL: THE FOLLOWING TAILWIND IMPORTS MUST NEVER BE DELETED OR REORDERED - DO NOT DELETE THIS COMMENT */
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+/* END TAILWIND IMPORTS - ALL OTHER CSS MUST GO BELOW THIS LINE */
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  .dark {
+    color-scheme: dark;
+  }
+
+  html {
+    @apply scroll-smooth;
+  }
+
+  body {
+    @apply min-h-screen bg-brand-bg text-slate-900 antialiased transition-colors duration-300 dark:bg-brand-dark dark:text-slate-100;
+    background-image:
+      radial-gradient(circle at top left, rgba(172, 186, 196, 0.28), transparent 30%),
+      radial-gradient(circle at bottom right, rgba(225, 217, 188, 0.72), transparent 34%),
+      linear-gradient(180deg, #faf8ef 0%, #f0eddf 100%);
+  }
+
+  .dark body {
+    background-image:
+      radial-gradient(circle at top left, rgba(172, 186, 196, 0.16), transparent 28%),
+      radial-gradient(circle at bottom right, rgba(225, 217, 188, 0.08), transparent 24%),
+      linear-gradient(180deg, #22283c 0%, #181c2b 100%);
+  }
+
+  ::selection {
+    background: rgba(48, 54, 79, 0.18);
+    color: #22283c;
+  }
+
+  .dark ::selection {
+    background: rgba(172, 186, 196, 0.24);
+    color: #f0f0db;
+  }
+}
+
+@layer components {
+  .theme-shell {
+    @apply relative overflow-hidden;
+  }
+
+  .theme-surface {
+    @apply rounded-[1.5rem] border border-brand-sand/60 shadow-panel backdrop-blur-xl;
+    background: rgba(255, 255, 255, 0.72);
+  }
+
+  .dark .theme-surface {
+    background: linear-gradient(180deg, rgba(48, 54, 79, 0.88) 0%, rgba(31, 36, 54, 0.94) 100%);
+    border-color: rgba(172, 186, 196, 0.18);
+  }
+
+  .theme-sidebar {
+    @apply border-r border-brand-sand/50 backdrop-blur-xl;
+    background: rgba(255, 255, 255, 0.78);
+  }
+
+  .dark .theme-sidebar {
+    background: linear-gradient(180deg, rgba(43, 49, 71, 0.95) 0%, rgba(31, 36, 54, 0.98) 100%);
+    border-color: rgba(172, 186, 196, 0.18);
+  }
+
+  .theme-topbar {
+    @apply border-b border-brand-sand/50 backdrop-blur-xl;
+    background: rgba(255, 255, 255, 0.6);
+  }
+
+  .dark .theme-topbar {
+    background: rgba(43, 49, 71, 0.72);
+    border-color: rgba(172, 186, 196, 0.18);
+  }
+
+  .theme-heading {
+    @apply font-display tracking-[0.02em] text-brand-navy dark:text-brand-cream;
+  }
+
+  .theme-kicker {
+    @apply text-xs font-semibold uppercase tracking-[0.28em] text-brand-navy/55 dark:text-brand-mist/70;
+  }
+
+  .theme-glow::before {
+    content: '';
+    position: absolute;
+    inset: auto auto 12% -6%;
+    width: 14rem;
+    height: 14rem;
+    border-radius: 9999px;
+    background: rgba(172, 186, 196, 0.2);
+    filter: blur(52px);
+    pointer-events: none;
+  }
+
+  .theme-glow::after {
+    content: '';
+    position: absolute;
+    inset: 8% -3% auto auto;
+    width: 16rem;
+    height: 16rem;
+    border-radius: 9999px;
+    background: rgba(225, 217, 188, 0.35);
+    filter: blur(64px);
+    pointer-events: none;
+  }
+}
+
+/* Custom Scrollbar for a premium feel */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply rounded-full bg-brand-mist dark:bg-brand-line-dark;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-brand-navy/55 dark:bg-brand-mist/45;
+}
