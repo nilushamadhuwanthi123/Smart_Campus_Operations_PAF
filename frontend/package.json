@@ -8,16 +8,18 @@
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^13.5.0",
     "axios": "^1.15.0",
+    "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.7",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
-    "react-scripts": "5.0.1",
+    "react-scripts": "^5.0.1",
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "start": "node ./node_modules/react-scripts/scripts/start.js",
+    "build": "node ./node_modules/react-scripts/scripts/build.js",
+    "test": "node ./node_modules/react-scripts/scripts/test.js --env=jsdom",
+    "eject": "node ./node_modules/react-scripts/scripts/eject.js"
   },
   "eslintConfig": {
     "extends": [
