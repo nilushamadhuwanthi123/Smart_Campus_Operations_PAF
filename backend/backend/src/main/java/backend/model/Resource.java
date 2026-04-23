@@ -1,42 +1,37 @@
 package backend.model;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
 
-@Entity
-@Table(name = "resources")
+@Document(collection = "resources")
 public class Resource {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private String id;
 
-    @Column(nullable = false, unique = true)
+    @NotBlank(message = "Resource code is required")
     private String resourceCode;
 
-    @Column(nullable = false)
+    @NotBlank(message = "Name is required")
     private String name;
 
-    @Column(nullable = false)
     private String type;
 
-    @Column(nullable = false)
+    @Min(value = 1, message = "Capacity must be at least 1")
     private int capacity;
 
-    @Column(nullable = false)
     private String location;
 
-    @Column(nullable = false)
     private String status;
+
+    private String availabilityWindow;
 
     public Resource() {
     }
 
-    public Resource(Long id, String resourceCode, String name, String type, int capacity, String location, String status) {
+    public Resource(String id, String resourceCode, String name, String type, int capacity, String location, String status, String availabilityWindow) {
         this.id = id;
         this.resourceCode = resourceCode;
         this.name = name;
@@ -44,13 +39,14 @@ public class Resource {
         this.capacity = capacity;
         this.location = location;
         this.status = status;
+        this.availabilityWindow = availabilityWindow;
     }
 
-    public Long getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(String id) {
         this.id = id;
     }
 
@@ -100,5 +96,13 @@ public class Resource {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public String getAvailabilityWindow() {
+        return availabilityWindow;
+    }
+
+    public void setAvailabilityWindow(String availabilityWindow) {
+        this.availabilityWindow = availabilityWindow;
     }
 }
