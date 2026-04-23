@@ -1,23 +1,44 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { BellIcon, CalendarIcon, MoonIcon, PlusIcon, SearchIcon, SunIcon, WrenchIcon } from 'lucide-react';
+import {
+  BellIcon,
+  CalendarIcon,
+  LogOutIcon,
+  MoonIcon,
+  PlusIcon,
+  SearchIcon,
+  SunIcon,
+  UserIcon,
+  WrenchIcon
+} from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { Button } from '../ui/Button';
 import { mockNotifications } from '../../data/mockData';
 import { appRoutes } from '../../utils/routes';
 
 export function TopNav() {
   const { isDark, toggleTheme } = useTheme();
+  const { user, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [showNotifications, setShowNotifications] = useState(false);
+
+  const canCreateTicket = user?.role === 'STUDENT';
 
   const pathnames = location.pathname.split('/').filter(Boolean);
   const breadcrumb =
     pathnames.length > 0
       ? pathnames[pathnames.length - 1].charAt(0).toUpperCase() + pathnames[pathnames.length - 1].slice(1)
       : 'Dashboard';
+
+  const roleLabel = useMemo(() => {
+    if (!user?.role) return '';
+    if (user.role === 'TECHNICIAN') return 'Technician';
+    if (user.role === 'STUDENT') return 'Student';
+    return 'Admin';
+  }, [user?.role]);
 
   return (
     <header className="theme-topbar sticky top-0 z-10 flex h-20 items-center justify-between px-4 sm:px-6">
@@ -36,15 +57,17 @@ export function TopNav() {
           />
         </div>
 
-        <Button
-          variant="secondary"
-          size="sm"
-          leftIcon={<PlusIcon className="h-4 w-4" />}
-          className="hidden sm:flex"
-          onClick={() => navigate(appRoutes.newTicket)}
-        >
-          New Ticket
-        </Button>
+        {canCreateTicket ? (
+          <Button
+            variant="secondary"
+            size="sm"
+            leftIcon={<PlusIcon className="h-4 w-4" />}
+            className="hidden sm:flex"
+            onClick={() => navigate(appRoutes.newTicket)}
+          >
+            New Ticket
+          </Button>
+        ) : null}
 
         <div className="mx-1 hidden h-8 w-px bg-brand-sand/70 dark:bg-brand-mist/20 sm:block" />
 
@@ -148,6 +171,20 @@ export function TopNav() {
             )}
           </AnimatePresence>
         </div>
+
+        <div className="hidden items-center gap-2 rounded-2xl border border-brand-sand/60 bg-white/55 px-3 py-2 text-xs dark:border-brand-mist/20 dark:bg-brand-surface/45 sm:flex">
+          <div className="rounded-full bg-brand-cream p-1.5 text-brand-navy dark:bg-brand-surface-hover dark:text-brand-cream">
+            <UserIcon className="h-3.5 w-3.5" />
+          </div>
+          <div className="min-w-0">
+            <p className="truncate font-semibold text-slate-700 dark:text-slate-100">{user?.fullName || 'Campus User'}</p>
+            <p className="truncate uppercase tracking-[0.12em] text-[10px] text-slate-400 dark:text-slate-500">{roleLabel}</p>
+          </div>
+        </div>
+
+        <Button variant="ghost" size="sm" leftIcon={<LogOutIcon className="h-4 w-4" />} onClick={logout}>
+          Logout
+        </Button>
       </div>
     </header>
   );
