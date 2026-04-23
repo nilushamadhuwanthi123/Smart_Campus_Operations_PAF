@@ -28,16 +28,19 @@ public class IssueReport {
 
     private String studentEmail;
 
+    private String assignedTechnicianId;
+
+    private String assignedTechnicianName;
+
     private List<String> attachmentUrls;
+
+    private List<IssueComment> comments;
 
     private String adminNote;
 
     private Instant createdAt;
 
     private Instant updatedAt;
-
-    public IssueReport() {
-    }
 
     public String getId() {
         return id;
@@ -111,12 +114,36 @@ public class IssueReport {
         this.studentEmail = studentEmail;
     }
 
+    public String getAssignedTechnicianId() {
+        return assignedTechnicianId;
+    }
+
+    public void setAssignedTechnicianId(String assignedTechnicianId) {
+        this.assignedTechnicianId = assignedTechnicianId;
+    }
+
+    public String getAssignedTechnicianName() {
+        return assignedTechnicianName;
+    }
+
+    public void setAssignedTechnicianName(String assignedTechnicianName) {
+        this.assignedTechnicianName = assignedTechnicianName;
+    }
+
     public List<String> getAttachmentUrls() {
         return attachmentUrls;
     }
 
     public void setAttachmentUrls(List<String> attachmentUrls) {
         this.attachmentUrls = attachmentUrls;
+    }
+
+    public List<IssueComment> getComments() {
+        return comments;
+    }
+
+    public void setComments(List<IssueComment> comments) {
+        this.comments = comments;
     }
 
     public String getAdminNote() {
@@ -141,5 +168,68 @@ public class IssueReport {
 
     public void setUpdatedAt(Instant updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public static class IssueComment {
+
+        private String id;
+
+        private String userId;
+
+        private String userName;
+
+        private String userRole;
+
+        private String message;
+
+        private Instant createdAt;
+
+        public String getId() {
+            return id;
+        }
+
+        public void setId(String id) {
+            this.id = id;
+        }
+
+        public String getUserId() {
+            return userId;
+        }
+
+        public void setUserId(String userId) {
+            this.userId = userId;
+        }
+
+        public String getUserName() {
+            return userName;
+        }
+
+        public void setUserName(String userName) {
+            this.userName = userName;
+        }
+
+        public String getUserRole() {
+            return userRole;
+        }
+
+        public void setUserRole(String userRole) {
+            this.userRole = userRole;
+        }
+
+        public String getMessage() {
+            return message;
+        }
+
+        public void setMessage(String message) {
+            this.message = message;
+        }
+
+        public Instant getCreatedAt() {
+            return createdAt;
+        }
+
+        public void setCreatedAt(Instant createdAt) {
+            this.createdAt = createdAt;
+        }
     }
 }
