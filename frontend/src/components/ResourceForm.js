@@ -1,358 +1,262 @@
 import React, { useEffect, useState } from 'react';
+import { getApiErrorMessage } from '../lib/api';
 
-const resourceTypes = ['Meeting Room', 'Lecture Hall', 'Lab', 'Equipment', 'Office'];
+const resourceTypes = ['Meeting Room', 'Lecture Hall', 'Lab', 'Equipment'];
 const resourceStatuses = ['Available', 'Booked', 'Out of Service'];
 
+const emptyFormData = {
+  resourceCode: '',
+  name: '',
+  type: resourceTypes[0],
+  capacity: '',
+  location: '',
+  status: resourceStatuses[0],
+  availabilityWindow: '',
+};
+
+function Field({ label, required, children }) {
+  return (
+    <label className="block">
+      <span className="text-sm font-medium text-primary">
+        {label}
+        {required ? ' *' : ''}
+      </span>
+      <div className="mt-2">{children}</div>
+    </label>
+  );
+}
+
 function ResourceForm({ open, onClose, onSubmit, resource, existingResources = [] }) {
-  const [resourceCode, setResourceCode] = useState('');
-  const [name, setName] = useState('');
-  const [type, setType] = useState(resourceTypes[0]);
-  const [capacity, setCapacity] = useState('');
-  const [location, setLocation] = useState('');
-  const [status, setStatus] = useState(resourceStatuses[0]);
-  const [availabilityWindow, setAvailabilityWindow] = useState('');
-  const [imageFile, setImageFile] = useState(null);
+  const [formData, setFormData] = useState(emptyFormData);
+  const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
-  const [formError, setFormError] = useState(null);
-  const [fieldErrors, setFieldErrors] = useState({});
 
   useEffect(() => {
-    if (!open) return;
-
-    if (resource) {
-      setResourceCode(resource.resourceCode ?? '');
-      setName(resource.name ?? '');
-      setType(resource.type && resourceTypes.includes(resource.type) ? resource.type : resourceTypes[0]);
-      setCapacity(resource.capacity ?? '');
-      setLocation(resource.location ?? '');
-      setStatus(resource.status && resourceStatuses.includes(resource.status) ? resource.status : resourceStatuses[0]);
-      setAvailabilityWindow(resource.availabilityWindow ?? '');
-      setImageFile(null);
-      setFormError(null);
-      setFieldErrors({});
-    } else {
-      setResourceCode('');
-      setName('');
-      setType(resourceTypes[0]);
-      setCapacity('');
-      setLocation('');
-      setStatus(resourceStatuses[0]);
-      setAvailabilityWindow('');
-      setImageFile(null);
-      setFormError(null);
-      setFieldErrors({});
+    if (!open) {
+      return;
     }
+
+    if (!resource) {
+      setFormData(emptyFormData);
+      setError('');
+      return;
+    }
+
+    setFormData({
+      resourceCode: resource.resourceCode || '',
+      name: resource.name || '',
+      type: resource.type || resourceTypes[0],
+      capacity: resource.capacity?.toString() || '',
+      location: resource.location || '',
+      status: resource.status || resourceStatuses[0],
+      availabilityWindow: resource.availabilityWindow || '',
+    });
+    setError('');
   }, [open, resource]);
 
-  if (!open) return null;
+  if (!open) {
+    return null;
+  }
 
-  const isEditMode = Boolean(resource?.id);
+  const inputClassName =
+    'w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-primary outline-none transition focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/15';
 
-  const validateField = (fieldName, value) => {
-    const errors = { ...fieldErrors };
-
-    switch (fieldName) {
-      case 'resourceCode':
-        if (!value.trim()) {
-          errors.resourceCode = 'Resource code is required';
-        } else {
-          // Check uniqueness (exclude current resource in edit mode)
-          const isDuplicate = existingResources.some(r =>
-            r.resourceCode === value.trim() && r.id !== resource?.id
-          );
-          if (isDuplicate) {
-            errors.resourceCode = 'Resource code must be unique';
-          } else {
-            delete errors.resourceCode;
-          }
-        }
-        break;
-      case 'name':
-        if (!value.trim()) {
-          errors.name = 'Name is required';
-        } else {
-          delete errors.name;
-        }
-        break;
-      case 'capacity':
-        if (!value.toString().trim()) {
-          errors.capacity = 'Capacity is required';
-        } else if (Number(value) <= 0) {
-          errors.capacity = 'Capacity must be greater than 0';
-        } else {
-          delete errors.capacity;
-        }
-        break;
-      case 'location':
-        if (!value.trim()) {
-          errors.location = 'Location is required';
-        } else {
-          delete errors.location;
-        }
-        break;
-      default:
-        break;
-    }
-
-    setFieldErrors(errors);
+  const handleChange = (event) => {
+    const { name, value } = event.target;
+    setFormData((current) => ({ ...current, [name]: value }));
   };
 
-  const handleFieldChange = (fieldName, value) => {
-    // Clear error for this field when user starts typing
-    if (fieldErrors[fieldName]) {
-      setFieldErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors[fieldName];
-        return newErrors;
-      });
+  const validate = () => {
+    if (!formData.resourceCode.trim()) {
+      return 'Resource code is required.';
+    }
+    if (!formData.name.trim()) {
+      return 'Name is required.';
+    }
+    if (!formData.capacity || Number(formData.capacity) <= 0) {
+      return 'Capacity must be greater than 0.';
+    }
+    if (!formData.location.trim()) {
+      return 'Location is required.';
+    }
+    if (!formData.availabilityWindow.trim()) {
+      return 'Availability window is required.';
     }
 
-    // Update field value
-    switch (fieldName) {
-      case 'resourceCode':
-        setResourceCode(value);
-        break;
-      case 'name':
-        setName(value);
-        break;
-      case 'capacity':
-        setCapacity(value);
-        break;
-      case 'location':
-        setLocation(value);
-        break;
-      case 'availabilityWindow':
-        setAvailabilityWindow(value);
-        break;
-      default:
-        break;
-    }
-  };
+    const duplicateCode = existingResources.some(
+      (item) =>
+        item.resourceCode?.trim().toLowerCase() === formData.resourceCode.trim().toLowerCase() &&
+        item.id !== resource?.id
+    );
 
-  const handleFieldBlur = (fieldName) => {
-    // Validate field on blur
-    switch (fieldName) {
-      case 'resourceCode':
-        validateField('resourceCode', resourceCode);
-        break;
-      case 'name':
-        validateField('name', name);
-        break;
-      case 'capacity':
-        validateField('capacity', capacity);
-        break;
-      case 'location':
-        validateField('location', location);
-        break;
-      default:
-        break;
+    if (duplicateCode) {
+      return 'Resource code must be unique.';
     }
+
+    return null;
   };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    setFormError(null);
+    const validationError = validate();
 
-    // Validate all required fields
-    validateField('resourceCode', resourceCode);
-    validateField('name', name);
-    validateField('capacity', capacity);
-    validateField('location', location);
-
-    // Check if there are any validation errors
-    if (Object.keys(fieldErrors).length > 0) {
-      setFormError('Please fix the validation errors below.');
+    if (validationError) {
+      setError(validationError);
       return;
     }
 
-    const payload = {
-      resourceCode: resourceCode.trim(),
-      name: name.trim(),
-      type,
-      capacity: Number(capacity) || capacity,
-      location: location.trim(),
-      status,
-      availabilityWindow: availabilityWindow.trim(),
-      imageName: imageFile?.name ?? resource?.imageName ?? null,
-    };
-
     try {
       setSaving(true);
-      await onSubmit(payload, resource?.id);
+      setError('');
+
+      await onSubmit(
+        {
+          resourceCode: formData.resourceCode.trim(),
+          name: formData.name.trim(),
+          type: formData.type,
+          capacity: Number(formData.capacity),
+          location: formData.location.trim(),
+          status: formData.status,
+          availabilityWindow: formData.availabilityWindow.trim(),
+        },
+        resource?.id
+      );
+
       onClose();
     } catch (submitError) {
-      setFormError('Failed to save resource. Please try again.');
+      setError(getApiErrorMessage(submitError, 'Failed to save resource.'));
     } finally {
       setSaving(false);
     }
   };
 
-  const getInputClassName = (fieldName) => {
-    const baseClass = "w-full rounded-2xl border bg-slate-50 px-4 py-3 text-sm text-primary outline-none transition focus:ring-2 focus:ring-primary/20";
-    const hasError = fieldErrors[fieldName];
-    return hasError
-      ? `${baseClass} border-red-300 focus:border-red-500`
-      : `${baseClass} border-slate-200 focus:border-primary`;
-  };
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 px-4 py-8">
-      <div className="w-full max-w-2xl overflow-hidden rounded-3xl bg-white shadow-2xl">
-        <div className="flex items-center justify-between border-b border-slate-200 px-6 py-5">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6">
+      <div className="w-full max-w-4xl rounded-[28px] border border-white/60 bg-white p-6 shadow-2xl sm:p-8">
+        <div className="flex flex-col gap-3 border-b border-slate-200 pb-5 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-primary/60">
-              {isEditMode ? 'Edit Resource' : 'Add Resource'}
+            <p className="text-sm font-semibold uppercase tracking-[0.22em] text-primary/55">
+              Resource Form
             </p>
             <h2 className="mt-2 text-2xl font-semibold text-primary">
-              {isEditMode ? 'Update resource details' : 'New resource details'}
+              {resource ? 'Edit Resource' : 'Add New Resource'}
             </h2>
           </div>
+
           <button
             type="button"
             onClick={onClose}
-            className="rounded-2xl bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-200"
+            className="self-start rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-primary/70 transition hover:bg-slate-50"
           >
             Close
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6 px-6 py-6">
-          {formError && (
-            <div className="rounded-2xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">
-              {formError}
-            </div>
-          )}
-
-          <div className="grid gap-6 sm:grid-cols-2">
-            <label className="space-y-2 text-sm text-primary/90">
-              <span className="font-medium">Resource Code *</span>
-              <input
-                value={resourceCode}
-                onChange={(e) => handleFieldChange('resourceCode', e.target.value)}
-                onBlur={() => handleFieldBlur('resourceCode')}
-                className={getInputClassName('resourceCode')}
-                placeholder="Unique resource code"
-              />
-              {fieldErrors.resourceCode && (
-                <p className="text-red-500 text-sm">{fieldErrors.resourceCode}</p>
-              )}
-            </label>
-
-            <label className="space-y-2 text-sm text-primary/90">
-              <span className="font-medium">Name *</span>
-              <input
-                value={name}
-                onChange={(e) => handleFieldChange('name', e.target.value)}
-                onBlur={() => handleFieldBlur('name')}
-                className={getInputClassName('name')}
-                placeholder="Resource name"
-              />
-              {fieldErrors.name && (
-                <p className="text-red-500 text-sm">{fieldErrors.name}</p>
-              )}
-            </label>
+        {error ? (
+          <div className="mt-5 rounded-2xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">
+            {error}
           </div>
+        ) : null}
 
-          <div className="grid gap-6 sm:grid-cols-2">
-            <label className="space-y-2 text-sm text-primary/90">
-              <span className="font-medium">Type</span>
+        <form onSubmit={handleSubmit} className="mt-6 space-y-6">
+          <div className="grid gap-5 md:grid-cols-2">
+            <Field label="Resource Code" required>
+              <input
+                name="resourceCode"
+                value={formData.resourceCode}
+                onChange={handleChange}
+                className={inputClassName}
+                placeholder="SC-RES-001"
+              />
+            </Field>
+
+            <Field label="Name" required>
+              <input
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                className={inputClassName}
+                placeholder="Main Lecture Hall"
+              />
+            </Field>
+
+            <Field label="Type" required>
               <select
-                value={type}
-                onChange={(e) => setType(e.target.value)}
-                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-primary outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
+                name="type"
+                value={formData.type}
+                onChange={handleChange}
+                className={inputClassName}
               >
-                {resourceTypes.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
+                {resourceTypes.map((type) => (
+                  <option key={type} value={type}>
+                    {type}
                   </option>
                 ))}
               </select>
-            </label>
+            </Field>
 
-            <label className="space-y-2 text-sm text-primary/90">
-              <span className="font-medium">Capacity *</span>
+            <Field label="Capacity" required>
               <input
                 type="number"
-                value={capacity}
-                onChange={(e) => handleFieldChange('capacity', e.target.value)}
-                onBlur={() => handleFieldBlur('capacity')}
-                className={getInputClassName('capacity')}
-                placeholder="Number of people"
+                min="1"
+                name="capacity"
+                value={formData.capacity}
+                onChange={handleChange}
+                className={inputClassName}
+                placeholder="120"
               />
-              {fieldErrors.capacity && (
-                <p className="text-red-500 text-sm">{fieldErrors.capacity}</p>
-              )}
-            </label>
-          </div>
+            </Field>
 
-          <div className="grid gap-6 sm:grid-cols-2">
-            <label className="space-y-2 text-sm text-primary/90">
-              <span className="font-medium">Location *</span>
+            <Field label="Location" required>
               <input
-                value={location}
-                onChange={(e) => handleFieldChange('location', e.target.value)}
-                onBlur={() => handleFieldBlur('location')}
-                className={getInputClassName('location')}
-                placeholder="Building / room"
+                name="location"
+                value={formData.location}
+                onChange={handleChange}
+                className={inputClassName}
+                placeholder="Engineering Block A"
               />
-              {fieldErrors.location && (
-                <p className="text-red-500 text-sm">{fieldErrors.location}</p>
-              )}
-            </label>
+            </Field>
 
-            <label className="space-y-2 text-sm text-primary/90">
-              <span className="font-medium">Status</span>
+            <Field label="Status" required>
               <select
-                value={status}
-                onChange={(e) => setStatus(e.target.value)}
-                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-primary outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
+                name="status"
+                value={formData.status}
+                onChange={handleChange}
+                className={inputClassName}
               >
-                {resourceStatuses.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
+                {resourceStatuses.map((status) => (
+                  <option key={status} value={status}>
+                    {status}
                   </option>
                 ))}
               </select>
-            </label>
+            </Field>
           </div>
 
-          <div className="space-y-2 text-sm text-primary/90">
-            <span className="font-medium">Availability window</span>
+          <Field label="Availability Window" required>
             <input
-              value={availabilityWindow}
-              onChange={(e) => handleFieldChange('availabilityWindow', e.target.value)}
-              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-primary outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
-              placeholder="e.g. Mon-Fri 08:00 - 18:00"
+              name="availabilityWindow"
+              value={formData.availabilityWindow}
+              onChange={handleChange}
+              className={inputClassName}
+              placeholder="08:00 - 17:00"
             />
-          </div>
+          </Field>
 
-          <div className="space-y-2 text-sm text-primary/90">
-            <span className="font-medium">Image upload</span>
-            <label className="flex cursor-pointer items-center justify-between rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-600 transition hover:border-primary hover:text-primary">
-              <span>{imageFile?.name ?? resource?.imageName ?? 'Choose image file (UI only)'}</span>
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(e) => setImageFile(e.target.files?.[0] ?? null)}
-              />
-            </label>
-          </div>
-
-          <div className="flex flex-col gap-3 border-t border-slate-200 pt-5 sm:flex-row sm:justify-end">
+          <div className="flex flex-wrap justify-end gap-3 border-t border-slate-200 pt-5">
             <button
               type="button"
               onClick={onClose}
-              className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+              className="rounded-full border border-slate-200 px-5 py-2.5 text-sm font-semibold text-primary/70 transition hover:bg-slate-50"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={saving}
-              className="rounded-2xl bg-primary px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
+              className="rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-70"
             >
-              {saving ? 'Saving…' : isEditMode ? 'Update Resource' : 'Save Resource'}
+              {saving ? 'Saving...' : resource ? 'Update Resource' : 'Save Resource'}
             </button>
           </div>
         </form>
