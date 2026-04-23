@@ -1,7 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import { API_BASE_URL, getApiErrorMessage } from '../lib/api';
 
-function DashboardStats() {
+const toneStyles = {
+  primary: 'bg-primary text-white',
+  emerald: 'bg-emerald-100 text-emerald-700',
+  amber: 'bg-amber-100 text-amber-700',
+  rose: 'bg-rose-100 text-rose-700',
+};
+
+function DashboardStats({ refreshKey }) {
   const [stats, setStats] = useState({
     total: 0,
     available: 0,
@@ -9,68 +17,80 @@ function DashboardStats() {
     outOfService: 0,
   });
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  const fetchStats = async () => {
-    try {
-      setError(null);
-      const response = await axios.get('/api/resources/stats');
-      const data = response.data ?? {};
-      setStats({
-        total: data.total ?? 0,
-        available: data.available ?? 0,
-        booked: data.booked ?? 0,
-        outOfService: data.outOfService ?? 0,
-      });
-    } catch (fetchError) {
-      setError('Unable to load stats.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [error, setError] = useState('');
 
   useEffect(() => {
     let active = true;
 
-    if (active) {
-      fetchStats();
+    async function fetchStats() {
+      try {
+        setError('');
+        const response = await axios.get(`${API_BASE_URL}/resources/stats`);
+        if (!active) {
+          return;
+        }
+        setStats({
+          total: response.data?.totalCount || 0,
+          available: response.data?.availableCount || 0,
+          booked: response.data?.bookedCount || 0,
+          outOfService: response.data?.outOfServiceCount || 0,
+        });
+      } catch (fetchError) {
+        if (!active) {
+          return;
+        }
+        setError(getApiErrorMessage(fetchError, 'Unable to load stats.'));
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
     }
 
-    const intervalId = window.setInterval(() => {
-      if (!active) return;
-      fetchStats();
-    }, 10000);
-
+    fetchStats();
     return () => {
       active = false;
-      window.clearInterval(intervalId);
     };
-  }, []);
+  }, [refreshKey]);
 
-  const statCards = [
-    { label: 'Total', value: stats.total, tone: 'primary' },
-    { label: 'Available', value: stats.available, tone: 'emerald' },
-    { label: 'Booked', value: stats.booked, tone: 'amber' },
-    { label: 'Out of Service', value: stats.outOfService, tone: 'rose' },
+  const cards = [
+    {
+      label: 'Total Resources',
+      value: stats.total,
+      detail: 'Campus-wide',
+      tone: 'primary',
+    },
+    {
+      label: 'Available',
+      value: stats.available,
+      detail: 'Ready now',
+      tone: 'emerald',
+    },
+    {
+      label: 'Booked',
+      value: stats.booked,
+      detail: 'Active use',
+      tone: 'amber',
+    },
+    {
+      label: 'Out of Service',
+      value: stats.outOfService,
+      detail: 'Needs action',
+      tone: 'rose',
+    },
   ];
 
-  const toneStyles = {
-    primary: 'bg-primary/10 text-primary',
-    emerald: 'bg-emerald-100 text-emerald-700',
-    amber: 'bg-amber-100 text-amber-700',
-    rose: 'bg-rose-100 text-rose-700',
-  };
-
   return (
-    <section className="rounded-3xl border border-white/50 bg-white/75 p-6 shadow-panel">
-      <div className="flex items-center justify-between gap-3">
+    <section className="rounded-3xl border border-white/50 bg-white/75 p-6 shadow-panel backdrop-blur">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <p className="text-sm font-semibold uppercase tracking-[0.25em] text-primary/60">
-            Dashboard Stats
+            Dashboard
           </p>
           <h3 className="mt-2 text-2xl font-semibold text-primary">Live resource metrics</h3>
         </div>
-        {loading && <p className="text-sm text-primary/70">Refreshing...</p>}
+
+        {loading ? <p className="text-sm text-primary/70">Loading metrics...</p> : null}
       </div>
 
       {error ? (
@@ -79,13 +99,18 @@ function DashboardStats() {
         </div>
       ) : (
         <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {statCards.map((card) => (
-            <div key={card.label} className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-              <p className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] ${toneStyles[card.tone]}`}>
+          {cards.map((card) => (
+            <article key={card.label} className={`rounded-3xl p-5 shadow-sm ${toneStyles[card.tone]}`}>
+              <p className="text-sm font-medium uppercase tracking-[0.2em] opacity-80">
                 {card.label}
               </p>
-              <p className="mt-5 text-4xl font-semibold text-primary">{card.value}</p>
-            </div>
+              <div className="mt-6 flex items-end justify-between gap-4">
+                <h2 className="text-4xl font-semibold">{card.value}</h2>
+                <span className="rounded-full bg-white/40 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em]">
+                  {card.detail}
+                </span>
+              </div>
+            </article>
           ))}
         </div>
       )}
