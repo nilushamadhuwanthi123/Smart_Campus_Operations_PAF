@@ -1,27 +1,41 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   PlusIcon,
   SearchIcon,
   ClockIcon,
   AlertTriangleIcon,
-  ChevronRightIcon
+  ChevronRightIcon,
+  UserCheckIcon
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Badge, StatusBadge } from '../../components/ui/Badge';
 import { getIssueReports } from '../../api/issues';
+import { useAuth } from '../../contexts/AuthContext';
 import { appRoutes } from '../../utils/routes';
 
 export function MyTicketsPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+
   const [tickets, setTickets] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [priorityFilter, setPriorityFilter] = useState('ALL');
+
+  const isStudent = user?.role === 'STUDENT';
+  const isTechnician = user?.role === 'TECHNICIAN';
+
+  const pageTitle = isTechnician ? 'Assigned Tickets' : user?.role === 'ADMIN' ? 'All Tickets' : 'My Tickets';
+  const pageDescription = isTechnician
+    ? 'Respond to assigned incidents and update progress.'
+    : user?.role === 'ADMIN'
+      ? 'Review all campus tickets and coordinate technician assignment.'
+      : 'Track and manage your submitted incidents.';
 
   useEffect(() => {
     let ignore = false;
@@ -53,14 +67,18 @@ export function MyTicketsPage() {
     };
   }, []);
 
-  const filteredTickets = tickets.filter((ticket) => {
-    const matchesSearch =
-      ticket.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      ticket.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'ALL' || ticket.status === statusFilter;
-    const matchesPriority = priorityFilter === 'ALL' || ticket.priority === priorityFilter;
-    return matchesSearch && matchesStatus && matchesPriority;
-  });
+  const filteredTickets = useMemo(
+    () =>
+      tickets.filter((ticket) => {
+        const matchesSearch =
+          ticket.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (ticket.description || '').toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesStatus = statusFilter === 'ALL' || ticket.status === statusFilter;
+        const matchesPriority = priorityFilter === 'ALL' || ticket.priority === priorityFilter;
+        return matchesSearch && matchesStatus && matchesPriority;
+      }),
+    [tickets, searchTerm, statusFilter, priorityFilter]
+  );
 
   const getPriorityColor = (priority) => {
     switch (priority) {
@@ -78,44 +96,47 @@ export function MyTicketsPage() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="mx-auto max-w-6xl space-y-6">
+      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Tickets</h1>
-          <p className="text-slate-500 dark:text-slate-400 mt-1">Track and manage reported incidents</p>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{pageTitle}</h1>
+          <p className="mt-1 text-slate-500 dark:text-slate-400">{pageDescription}</p>
         </div>
-        <Button onClick={() => navigate(appRoutes.newTicket)} leftIcon={<PlusIcon className="w-4 h-4" />}>
-          Report Issue
-        </Button>
+        {isStudent ? (
+          <Button onClick={() => navigate(appRoutes.newTicket)} leftIcon={<PlusIcon className="h-4 w-4" />}>
+            Report Issue
+          </Button>
+        ) : null}
       </div>
 
       <Card>
-        <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row gap-4">
+        <div className="flex flex-col gap-4 border-b border-slate-200 p-4 dark:border-slate-800 sm:flex-row">
           <div className="relative flex-1">
-            <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <SearchIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
               placeholder="Search tickets..."
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
-              className="w-full pl-9 pr-4 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-purple text-sm text-slate-900 dark:text-white"
+              className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-9 pr-4 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-purple dark:border-slate-700 dark:bg-slate-900 dark:text-white"
             />
           </div>
           <select
             value={statusFilter}
             onChange={(event) => setStatusFilter(event.target.value)}
-            className="py-2 px-4 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-purple text-sm text-slate-900 dark:text-white"
+            className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-purple dark:border-slate-700 dark:bg-slate-900 dark:text-white"
           >
             <option value="ALL">All Statuses</option>
             <option value="OPEN">Open</option>
             <option value="IN_PROGRESS">In Progress</option>
             <option value="RESOLVED">Resolved</option>
             <option value="CLOSED">Closed</option>
+            <option value="REJECTED">Rejected</option>
           </select>
           <select
             value={priorityFilter}
             onChange={(event) => setPriorityFilter(event.target.value)}
-            className="py-2 px-4 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-purple text-sm text-slate-900 dark:text-white"
+            className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-purple dark:border-slate-700 dark:bg-slate-900 dark:text-white"
           >
             <option value="ALL">All Priorities</option>
             <option value="CRITICAL">Critical</option>
@@ -136,34 +157,40 @@ export function MyTicketsPage() {
                   transition={{ delay: index * 0.05 }}
                   key={ticket.id}
                   onClick={() => navigate(appRoutes.ticketDetail(ticket.id))}
-                  className="p-4 sm:p-6 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer group flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                  className="group flex cursor-pointer flex-col justify-between gap-4 p-4 transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50 sm:flex-row sm:items-center sm:p-6"
                 >
                   <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
+                    <div className="mb-2 flex flex-wrap items-center gap-3">
                       <h3 className="font-semibold text-slate-900 dark:text-white">{ticket.title}</h3>
                       <StatusBadge status={ticket.status} />
                       <Badge variant="default" className="bg-slate-100 dark:bg-slate-800">
                         <span className={`flex items-center gap-1 ${getPriorityColor(ticket.priority)}`}>
-                          <AlertTriangleIcon className="w-3 h-3" />
+                          <AlertTriangleIcon className="h-3 w-3" />
                           {ticket.priority}
                         </span>
                       </Badge>
                     </div>
                     <div className="flex flex-wrap items-center gap-4 text-sm text-slate-500 dark:text-slate-400">
                       <div className="flex items-center gap-1.5">
-                        <ClockIcon className="w-4 h-4" />
+                        <ClockIcon className="h-4 w-4" />
                         <span>{new Date(ticket.createdAt).toLocaleDateString()}</span>
                       </div>
                       <div>
-                        <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 rounded text-xs">{ticket.category}</span>
+                        <span className="rounded bg-slate-100 px-2 py-0.5 text-xs dark:bg-slate-800">{ticket.category}</span>
                       </div>
+                      {ticket.assignedTechnicianName ? (
+                        <div className="flex items-center gap-1.5">
+                          <UserCheckIcon className="h-4 w-4" />
+                          <span>{ticket.assignedTechnicianName}</span>
+                        </div>
+                      ) : null}
                     </div>
                   </div>
                   <div className="flex items-center justify-end">
                     <Button
                       variant="ghost"
-                      className="opacity-0 group-hover:opacity-100 transition-opacity"
-                      rightIcon={<ChevronRightIcon className="w-4 h-4" />}
+                      className="opacity-0 transition-opacity group-hover:opacity-100"
+                      rightIcon={<ChevronRightIcon className="h-4 w-4" />}
                     >
                       View Ticket
                     </Button>
@@ -172,16 +199,18 @@ export function MyTicketsPage() {
               ))
             : !isLoading && (
                 <div className="p-12 text-center">
-                  <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <AlertTriangleIcon className="w-8 h-8 text-slate-400" />
+                  <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
+                    <AlertTriangleIcon className="h-8 w-8 text-slate-400" />
                   </div>
-                  <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-1">No tickets found</h3>
-                  <p className="text-slate-500 dark:text-slate-400 mb-6">
-                    No reported issues currently match your search filters.
+                  <h3 className="mb-1 text-lg font-medium text-slate-900 dark:text-white">No tickets found</h3>
+                  <p className="mb-6 text-slate-500 dark:text-slate-400">
+                    No tickets currently match your filters.
                   </p>
-                  <Button onClick={() => navigate(appRoutes.newTicket)} leftIcon={<PlusIcon className="w-4 h-4" />}>
-                    Report an Issue
-                  </Button>
+                  {isStudent ? (
+                    <Button onClick={() => navigate(appRoutes.newTicket)} leftIcon={<PlusIcon className="h-4 w-4" />}>
+                      Report an Issue
+                    </Button>
+                  ) : null}
                 </div>
               )}
         </div>

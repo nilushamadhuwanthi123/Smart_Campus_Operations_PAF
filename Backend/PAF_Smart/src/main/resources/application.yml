@@ -14,5 +14,14 @@ spring:
 app:
   cors:
     allowed-origin-patterns: ${CORS_ALLOWED_ORIGIN_PATTERNS:http://localhost:*,http://127.0.0.1:*}
+  auth:
+    jwt-secret: ${JWT_SECRET:smart-campus-dev-secret-change-me-smart-campus-dev-secret}
+    jwt-expiration-seconds: ${JWT_EXPIRATION_SECONDS:43200}
+    google-client-id: ${GOOGLE_CLIENT_ID:823077711702-of9ke851robhufh7du50kq37rla7h1ur.apps.googleusercontent.com}
+    seed-admin:
+      full-name: ${SEED_ADMIN_FULL_NAME:System Administrator}
+      phone-number: ${SEED_ADMIN_PHONE_NUMBER:0000000000}
+      email: ${SEED_ADMIN_EMAIL:admin@gmail.com}
+      temporary-password: ${SEED_ADMIN_TEMPORARY_PASSWORD:Admin@12345}
 
 

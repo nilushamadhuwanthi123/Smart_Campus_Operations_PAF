@@ -13,8 +13,6 @@ export function NewTicketPage() {
   const [category, setCategory] = useState('');
   const [priority, setPriority] = useState('LOW');
   const [description, setDescription] = useState('');
-  const [reporterName, setReporterName] = useState('');
-  const [reporterEmail, setReporterEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
@@ -44,9 +42,6 @@ export function NewTicketPage() {
         description,
         category,
         priority,
-        studentId: 'anonymous',
-        studentName: reporterName || 'Anonymous Reporter',
-        studentEmail: reporterEmail || 'anonymous@campus.local',
         attachmentUrls
       });
 
@@ -54,7 +49,7 @@ export function NewTicketPage() {
       setShowSuccess(true);
       setTimeout(() => {
         navigate(appRoutes.tickets);
-      }, 1500);
+      }, 1200);
     } catch (error) {
       setIsSubmitting(false);
       setErrorMessage(error.message || 'Failed to submit ticket.');
@@ -62,14 +57,14 @@ export function NewTicketPage() {
   };
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
+    <div className="mx-auto max-w-3xl space-y-6">
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="px-2">
-          <ArrowLeftIcon className="w-5 h-5" />
+          <ArrowLeftIcon className="h-5 w-5" />
         </Button>
         <div>
           <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Report an Issue</h1>
-          <p className="text-slate-500 dark:text-slate-400 mt-1">Submit a maintenance or support ticket</p>
+          <p className="mt-1 text-slate-500 dark:text-slate-400">Submit a maintenance or support ticket</p>
         </div>
       </div>
 
@@ -78,9 +73,9 @@ export function NewTicketPage() {
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 rounded-lg p-4 flex items-center gap-3 text-green-800 dark:text-green-400"
+            className="flex items-center gap-3 rounded-lg border border-green-200 bg-green-50 p-4 text-green-800 dark:border-green-800 dark:bg-green-900/30 dark:text-green-400"
           >
-            <CheckCircle2Icon className="w-5 h-5" />
+            <CheckCircle2Icon className="h-5 w-5" />
             <span className="font-medium">Ticket submitted successfully! Redirecting...</span>
           </motion.div>
         )}
@@ -91,7 +86,7 @@ export function NewTicketPage() {
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg p-4 text-red-800 dark:text-red-400"
+            className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-800 dark:border-red-800 dark:bg-red-900/30 dark:text-red-400"
           >
             <span className="font-medium">{errorMessage}</span>
           </motion.div>
@@ -105,7 +100,7 @@ export function NewTicketPage() {
           </CardHeader>
           <CardContent className="space-y-6">
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+              <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
                 Issue Title <span className="text-red-500">*</span>
               </label>
               <input
@@ -113,48 +108,20 @@ export function NewTicketPage() {
                 value={title}
                 onChange={(event) => setTitle(event.target.value)}
                 placeholder="Brief summary of the issue"
-                className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-purple text-slate-900 dark:text-white"
+                className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-purple dark:border-slate-700 dark:bg-slate-900 dark:text-white"
                 required
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                  Reporter Name (Optional)
-                </label>
-                <input
-                  type="text"
-                  value={reporterName}
-                  onChange={(event) => setReporterName(event.target.value)}
-                  placeholder="Your name"
-                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-purple text-slate-900 dark:text-white"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                  Reporter Email (Optional)
-                </label>
-                <input
-                  type="email"
-                  value={reporterEmail}
-                  onChange={(event) => setReporterEmail(event.target.value)}
-                  placeholder="you@campus.edu"
-                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-purple text-slate-900 dark:text-white"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
                   Category <span className="text-red-500">*</span>
                 </label>
                 <select
                   value={category}
                   onChange={(event) => setCategory(event.target.value)}
-                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-purple text-slate-900 dark:text-white"
+                  className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-purple dark:border-slate-700 dark:bg-slate-900 dark:text-white"
                   required
                 >
                   <option value="">Select category...</option>
@@ -167,13 +134,11 @@ export function NewTicketPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                  Urgency Level
-                </label>
+                <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">Urgency Level</label>
                 <select
                   value={priority}
                   onChange={(event) => setPriority(event.target.value)}
-                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-purple text-slate-900 dark:text-white cursor-pointer"
+                  className="w-full cursor-pointer rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-purple dark:border-slate-700 dark:bg-slate-900 dark:text-white"
                 >
                   <option value="LOW">Low - Not urgent</option>
                   <option value="MEDIUM">Medium - Needs attention soon</option>
@@ -184,7 +149,7 @@ export function NewTicketPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+              <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
                 Description <span className="text-red-500">*</span>
               </label>
               <textarea
@@ -192,20 +157,18 @@ export function NewTicketPage() {
                 value={description}
                 onChange={(event) => setDescription(event.target.value)}
                 placeholder="Please provide detailed information about the issue..."
-                className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-purple text-slate-900 dark:text-white resize-none"
+                className="w-full resize-none rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-purple dark:border-slate-700 dark:bg-slate-900 dark:text-white"
                 required
-              ></textarea>
+              />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                Evidence / Photos (Optional)
-              </label>
-              <div className="relative border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-xl p-8 text-center hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer overflow-hidden">
+              <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">Evidence / Photos (Optional)</label>
+              <div className="relative cursor-pointer overflow-hidden rounded-xl border-2 border-dashed border-slate-300 p-8 text-center transition-colors hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800/50">
                 <input
                   type="file"
                   accept="image/png, image/jpeg, image/gif, image/svg+xml"
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                  className="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0"
                   onChange={(event) => {
                     const files = event.target.files;
                     if (files && files.length > 0) {
@@ -217,14 +180,14 @@ export function NewTicketPage() {
                 />
                 {!filePreview ? (
                   <>
-                    <UploadCloudIcon className="w-10 h-10 text-slate-400 mx-auto mb-3" />
-                    <p className="text-sm font-medium text-slate-900 dark:text-white mb-1">Click to upload or drag and drop</p>
+                    <UploadCloudIcon className="mx-auto mb-3 h-10 w-10 text-slate-400" />
+                    <p className="mb-1 text-sm font-medium text-slate-900 dark:text-white">Click to upload or drag and drop</p>
                     <p className="text-xs text-slate-500 dark:text-slate-400">SVG, PNG, JPG or GIF (max. 5MB)</p>
                   </>
                 ) : (
-                  <div className="flex flex-col items-center relative z-0">
-                    <img src={filePreview} alt="Preview" className="max-h-32 mb-2 rounded-md object-contain" />
-                    <p className="text-sm font-medium text-brand-purple truncate max-w-[200px]">{selectedFile.name}</p>
+                  <div className="relative z-0 flex flex-col items-center">
+                    <img src={filePreview} alt="Preview" className="mb-2 max-h-32 rounded-md object-contain" />
+                    <p className="max-w-[200px] truncate text-sm font-medium text-brand-purple">{selectedFile.name}</p>
                     <p className="text-xs text-slate-500">Click or drag to replace</p>
                   </div>
                 )}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
@@ -7,19 +7,31 @@ import {
   GraduationCapIcon,
   LayoutDashboardIcon,
   SettingsIcon,
+  ShieldIcon,
   TicketIcon
 } from 'lucide-react';
 import { appRoutes } from '../../utils/routes';
+import { useAuth } from '../../contexts/AuthContext';
 
-const navigationItems = [
-  { name: 'Dashboard', path: appRoutes.dashboard, icon: LayoutDashboardIcon },
-  { name: 'Tickets', path: appRoutes.tickets, icon: TicketIcon },
-  { name: 'Notifications', path: appRoutes.notifications, icon: BellIcon },
-  { name: 'Settings', path: appRoutes.settings, icon: SettingsIcon }
+const allNavigationItems = [
+  { name: 'Dashboard', path: appRoutes.dashboard, icon: LayoutDashboardIcon, roles: ['ADMIN', 'STUDENT', 'TECHNICIAN'] },
+  { name: 'Tickets', path: appRoutes.tickets, icon: TicketIcon, roles: ['ADMIN', 'STUDENT', 'TECHNICIAN'] },
+  { name: 'User Access', path: appRoutes.adminUsers, icon: ShieldIcon, roles: ['ADMIN'] },
+  { name: 'Notifications', path: appRoutes.notifications, icon: BellIcon, roles: ['ADMIN', 'STUDENT', 'TECHNICIAN'] },
+  { name: 'Settings', path: appRoutes.settings, icon: SettingsIcon, roles: ['ADMIN', 'STUDENT', 'TECHNICIAN'] }
 ];
 
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
+  const { user } = useAuth();
+
+  const navigationItems = useMemo(() => {
+    if (!user?.role) {
+      return allNavigationItems.filter((item) => item.roles.includes('STUDENT'));
+    }
+
+    return allNavigationItems.filter((item) => item.roles.includes(user.role));
+  }, [user?.role]);
 
   return (
     <motion.aside

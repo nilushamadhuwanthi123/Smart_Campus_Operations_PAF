@@ -1,73 +1,54 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
+import { apiRequest } from './client';
 
-async function parseResponse(response, fallbackMessage) {
-  const contentType = response.headers.get('content-type') || '';
-  const payload = contentType.includes('application/json') ? await response.json() : null;
-
-  if (!response.ok) {
-    throw new Error(payload?.message || fallbackMessage);
-  }
-
-  return payload;
-}
-
-export async function createIssueReport(issueData) {
-  const response = await fetch(`${API_BASE_URL}/issues`, {
+export function createIssueReport(issueData) {
+  return apiRequest('/issues', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(issueData)
+    body: issueData
   });
-
-  return parseResponse(response, 'Failed to submit issue report.');
 }
 
-export async function uploadFile(file) {
+export function uploadFile(file) {
   const formData = new FormData();
   formData.append('file', file);
 
-  const response = await fetch(`${API_BASE_URL}/uploads`, {
+  return apiRequest('/uploads', {
     method: 'POST',
     body: formData
   });
-
-  return parseResponse(response, 'Failed to upload file.');
 }
 
-export async function getIssueReports(studentId) {
-  const query = studentId ? `?studentId=${encodeURIComponent(studentId)}` : '';
-  const response = await fetch(`${API_BASE_URL}/issues${query}`);
-
-  return parseResponse(response, 'Failed to load issue reports.');
+export function getIssueReports() {
+  return apiRequest('/issues');
 }
 
-export async function getIssueReportById(id) {
-  const response = await fetch(`${API_BASE_URL}/issues/${id}`);
-
-  return parseResponse(response, 'Failed to load issue report.');
+export function getIssueReportById(id) {
+  return apiRequest(`/issues/${id}`);
 }
 
-export async function updateIssueReportStatus(id, status) {
-  const response = await fetch(`${API_BASE_URL}/issues/${id}/status`, {
+export function updateIssueReportStatus(id, status) {
+  return apiRequest(`/issues/${id}/status`, {
     method: 'PATCH',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ status })
+    body: { status }
   });
-
-  return parseResponse(response, 'Failed to update issue report status.');
 }
 
-export async function updateIssueReportAdminNote(id, adminNote) {
-  const response = await fetch(`${API_BASE_URL}/issues/${id}/note`, {
+export function updateIssueReportAdminNote(id, adminNote) {
+  return apiRequest(`/issues/${id}/note`, {
     method: 'PATCH',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ adminNote })
+    body: { adminNote }
   });
+}
 
-  return parseResponse(response, 'Failed to save issue note.');
+export function assignIssueReportTechnician(id, technicianId) {
+  return apiRequest(`/issues/${id}/assign`, {
+    method: 'PATCH',
+    body: { technicianId }
+  });
+}
+
+export function addIssueReportComment(id, comment) {
+  return apiRequest(`/issues/${id}/comments`, {
+    method: 'POST',
+    body: { comment }
+  });
 }

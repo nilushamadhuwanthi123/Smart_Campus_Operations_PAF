@@ -5,6 +5,7 @@ import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.util.StringUtils;
@@ -33,6 +34,7 @@ public class FileUploadController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'STUDENT', 'TECHNICIAN')")
     public ResponseEntity<?> uploadFile(@RequestParam("file") MultipartFile file) {
         try {
             String originalFileName = StringUtils.cleanPath(file.getOriginalFilename());

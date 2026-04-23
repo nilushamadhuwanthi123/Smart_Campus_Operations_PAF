@@ -20,12 +20,5 @@ public record CreateIssueReportRequest(
         @NotBlank(message = "Priority is required")
         String priority,
 
-        String studentId,
-
-        @Size(max = 100, message = "Reporter name must not exceed 100 characters")
-        String studentName,
-
-        String studentEmail,
-
         List<String> attachmentUrls) {
 }
