@@ -9,4 +9,6 @@ import com.smartcampus.ticket.entity.IssueReport;
 public interface IssueReportRepository extends MongoRepository<IssueReport, String> {
 
     List<IssueReport> findByStudentIdOrderByCreatedAtDesc(String studentId);
+
+    List<IssueReport> findByAssignedTechnicianIdOrderByCreatedAtDesc(String assignedTechnicianId);
 }
