@@ -3,24 +3,16 @@ package backend.controller;
 import backend.dto.ResourceStatsResponse;
 import backend.model.Resource;
 import backend.service.ResourceService;
+import jakarta.validation.Valid;
+
 import java.util.List;
-import java.util.Map;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/resources")
-@CrossOrigin(origins = "http://localhost:3000")
 public class ResourceController {
 
     private final ResourceService resourceService;
@@ -29,35 +21,38 @@ public class ResourceController {
         this.resourceService = resourceService;
     }
 
+    // ✅ GET ALL
     @GetMapping
     public ResponseEntity<List<Resource>> getAllResources() {
         return ResponseEntity.ok(resourceService.getAllResources());
     }
 
+    // ✅ CREATE
     @PostMapping
-    public ResponseEntity<Resource> createResource(@RequestBody Resource resource) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(resourceService.createResource(resource));
+    public ResponseEntity<Resource> createResource(@Valid @RequestBody Resource resource) {
+        Resource saved = resourceService.createResource(resource);
+        return ResponseEntity.status(HttpStatus.CREATED).body(saved);
     }
 
+    // ✅ UPDATE
     @PutMapping("/{id}")
-    public ResponseEntity<Resource> updateResource(@PathVariable Long id, @RequestBody Resource resource) {
-        return ResponseEntity.ok(resourceService.updateResource(id, resource));
+    public ResponseEntity<Resource> updateResource(@PathVariable String id,
+                                                   @Valid @RequestBody Resource resource) {
+        resource.setId(id);
+        Resource updated = resourceService.updateResource(id, resource);
+        return ResponseEntity.ok(updated);
     }
 
+    // ✅ DELETE
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteResource(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteResource(@PathVariable String id) {
         resourceService.deleteResource(id);
         return ResponseEntity.noContent().build();
     }
 
+    // ✅ STATS
     @GetMapping("/stats")
     public ResponseEntity<ResourceStatsResponse> getResourceStats() {
         return ResponseEntity.ok(resourceService.getResourceStats());
-    }
-
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<Map<String, String>> handleIllegalArgument(IllegalArgumentException exception) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-            .body(Map.of("message", exception.getMessage()));
     }
 }
