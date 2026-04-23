@@ -1,12 +1,26 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import ResourceCard from './ResourceCard';
 import ResourceForm from './ResourceForm';
+import { API_BASE_URL, getApiErrorMessage } from '../lib/api';
 
-function ResourceList() {
+function normalizeResource(resource) {
+  return {
+    id: resource.id,
+    resourceCode: resource.resourceCode || '',
+    name: resource.name || '',
+    type: resource.type || '',
+    capacity: resource.capacity ?? '',
+    location: resource.location || '',
+    status: resource.status || 'Available',
+    availabilityWindow: resource.availabilityWindow || '',
+  };
+}
+
+function ResourceList({ onResourcesChanged }) {
   const [resources, setResources] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState('');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedResource, setSelectedResource] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -14,37 +28,37 @@ function ResourceList() {
 
   const filterOptions = ['All', 'Lecture Hall', 'Lab', 'Meeting Room', 'Equipment'];
 
-  const normalizedQuery = searchQuery.trim().toLowerCase();
-  const filteredResources = resources.filter((resource) => {
-    const name = (resource.name ?? resource.resourceName ?? '').toString().toLowerCase();
-    const type = (resource.type ?? resource.category ?? '').toString();
-    const matchesSearch = normalizedQuery === '' || name.includes(normalizedQuery);
-    const matchesType = selectedType === 'All' || type === selectedType;
-    return matchesSearch && matchesType;
-  });
+  const fetchResources = async () => {
+    try {
+      setError('');
+      const response = await axios.get(`${API_BASE_URL}/resources`);
+      const nextResources = Array.isArray(response.data)
+        ? response.data.map(normalizeResource)
+        : [];
+      setResources(nextResources);
+    } catch (fetchError) {
+      setError(getApiErrorMessage(fetchError, 'Unable to load resources.'));
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    let active = true;
-
-    async function fetchResources() {
-      try {
-        const response = await axios.get('http://localhost:8080/api/resources');
-        if (!active) return;
-        setResources(Array.isArray(response.data) ? response.data : []);
-      } catch (fetchError) {
-        if (!active) return;
-        setError('Unable to load resources.');
-      } finally {
-        if (!active) return;
-        setLoading(false);
-      }
-    }
-
     fetchResources();
-    return () => {
-      active = false;
-    };
   }, []);
+
+  const filteredResources = useMemo(() => {
+    const normalizedQuery = searchQuery.trim().toLowerCase();
+
+    return resources.filter((resource) => {
+      const matchesSearch =
+        normalizedQuery === '' ||
+        resource.name.toLowerCase().includes(normalizedQuery) ||
+        resource.resourceCode.toLowerCase().includes(normalizedQuery);
+      const matchesType = selectedType === 'All' || resource.type === selectedType;
+      return matchesSearch && matchesType;
+    });
+  }, [resources, searchQuery, selectedType]);
 
   const handleOpenForm = () => {
     setSelectedResource(null);
@@ -62,31 +76,49 @@ function ResourceList() {
   };
 
   const handleSubmitResource = async (payload, resourceId) => {
-    if (resourceId) {
-      const response = await axios.put(`http://localhost:8080/api/resources/${resourceId}`, payload);
-      const updatedResource = response.data ?? { ...payload, id: resourceId };
-      setResources((current) => current.map((item) => (item.id === resourceId ? updatedResource : item)));
-      return updatedResource;
-    }
+    try {
+      setError('');
+      if (resourceId) {
+        const response = await axios.put(`${API_BASE_URL}/resources/${resourceId}`, payload);
+        const updatedResource = normalizeResource(response.data);
+        setResources((current) =>
+          current.map((item) => (item.id === resourceId ? updatedResource : item))
+        );
+        onResourcesChanged?.();
+        return updatedResource;
+      }
 
-    const response = await axios.post('http://localhost:8080/api/resources', payload);
-    const savedResource = response.data ?? payload;
-    setResources((current) => [savedResource, ...current]);
-    return savedResource;
+      const response = await axios.post(`${API_BASE_URL}/resources`, payload);
+      const savedResource = normalizeResource(response.data);
+      setResources((current) => [savedResource, ...current]);
+      onResourcesChanged?.();
+      return savedResource;
+    } catch (submitError) {
+      const errorMsg = getApiErrorMessage(submitError, 'Failed to save resource.');
+      setError(errorMsg);
+      console.error('Submit Error:', submitError);
+      throw submitError;
+    }
   };
 
   const handleDeleteResource = async (resource) => {
-    if (!resource?.id) return;
+    const confirmed = window.confirm(`Delete resource "${resource.name}"?`);
+    if (!confirmed) {
+      return;
+    }
 
-    const confirmed = window.confirm(`Delete resource "${resource.name ?? 'this resource'}"?`);
-    if (!confirmed) return;
-
-    await axios.delete(`http://localhost:8080/api/resources/${resource.id}`);
-    setResources((current) => current.filter((item) => item.id !== resource.id));
+    try {
+      await axios.delete(`${API_BASE_URL}/resources/${resource.id}`);
+      setResources((current) => current.filter((item) => item.id !== resource.id));
+      onResourcesChanged?.();
+      setError('');
+    } catch (deleteError) {
+      setError(getApiErrorMessage(deleteError, 'Unable to delete resource.'));
+    }
   };
 
   return (
-    <section className="rounded-3xl border border-white/50 bg-white/75 p-6 shadow-panel">
+    <section className="rounded-3xl border border-white/50 bg-white/75 p-6 shadow-panel backdrop-blur">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <p className="text-sm font-semibold uppercase tracking-[0.25em] text-primary/60">
@@ -94,26 +126,25 @@ function ResourceList() {
           </p>
           <h3 className="mt-2 text-2xl font-semibold text-primary">Resource Inventory</h3>
         </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <p className="text-sm text-primary/70">Updated from the facilities API</p>
-          <button
-            type="button"
-            onClick={handleOpenForm}
-            className="rounded-2xl bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
-          >
-            + Add Resource
-          </button>
-        </div>
+
+        <button
+          type="button"
+          onClick={handleOpenForm}
+          className="rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800"
+        >
+          Add Resource
+        </button>
       </div>
 
-      <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <label className="flex-1">
+      <div className="mt-6 grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto]">
+        <label className="block">
+          <span className="sr-only">Search resources</span>
           <input
             type="text"
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search by name"
-            className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-primary outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
+            onChange={(event) => setSearchQuery(event.target.value)}
+            placeholder="Search by name or code"
+            className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-primary outline-none transition focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/20"
           />
         </label>
 
@@ -145,13 +176,13 @@ function ResourceList() {
         </div>
       ) : filteredResources.length === 0 ? (
         <div className="mt-8 rounded-3xl bg-light p-8 text-center text-sm font-medium text-primary/80">
-          No resources match your search or filter.
+          No resources found.
         </div>
       ) : (
         <div className="mt-8 grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
           {filteredResources.map((resource) => (
             <ResourceCard
-              key={resource.id ?? resource.name}
+              key={resource.id ?? resource.resourceCode}
               resource={resource}
               onEdit={handleEditResource}
               onDelete={handleDeleteResource}
