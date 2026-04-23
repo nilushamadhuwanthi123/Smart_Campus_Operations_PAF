@@ -1,20 +1,20 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeftIcon, UploadCloudIcon, CheckCircle2Icon } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardFooter } from '../../components/ui/Card';
+import { ArrowLeftIcon, CheckCircle2Icon, UploadCloudIcon } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Button } from '../../components/ui/Button';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useAuth } from '../../contexts/AuthContext';
+import { Card, CardContent, CardFooter, CardHeader } from '../../components/ui/Card';
 import { createIssueReport, uploadFile } from '../../api/issues';
-import { studentRoutes } from '../../utils/routes';
+import { appRoutes } from '../../utils/routes';
 
 export function NewTicketPage() {
   const navigate = useNavigate();
-  const { user } = useAuth();
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState('');
   const [priority, setPriority] = useState('LOW');
   const [description, setDescription] = useState('');
+  const [reporterName, setReporterName] = useState('');
+  const [reporterEmail, setReporterEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
@@ -31,7 +31,7 @@ export function NewTicketPage() {
     setIsSubmitting(true);
 
     try {
-      let attachmentUrls = [];
+      const attachmentUrls = [];
       if (selectedFile) {
         const uploadRes = await uploadFile(selectedFile);
         if (uploadRes && uploadRes.url) {
@@ -44,16 +44,16 @@ export function NewTicketPage() {
         description,
         category,
         priority,
-        studentId: user?.id || '',
-        studentName: user?.name || '',
-        studentEmail: user?.email || '',
+        studentId: 'anonymous',
+        studentName: reporterName || 'Anonymous Reporter',
+        studentEmail: reporterEmail || 'anonymous@campus.local',
         attachmentUrls
       });
 
       setIsSubmitting(false);
       setShowSuccess(true);
       setTimeout(() => {
-        navigate(studentRoutes.tickets);
+        navigate(appRoutes.tickets);
       }, 1500);
     } catch (error) {
       setIsSubmitting(false);
@@ -69,9 +69,7 @@ export function NewTicketPage() {
         </Button>
         <div>
           <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Report an Issue</h1>
-          <p className="text-slate-500 dark:text-slate-400 mt-1">
-            Submit a maintenance or support ticket
-          </p>
+          <p className="text-slate-500 dark:text-slate-400 mt-1">Submit a maintenance or support ticket</p>
         </div>
       </div>
 
@@ -118,6 +116,34 @@ export function NewTicketPage() {
                 className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-purple text-slate-900 dark:text-white"
                 required
               />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                  Reporter Name (Optional)
+                </label>
+                <input
+                  type="text"
+                  value={reporterName}
+                  onChange={(event) => setReporterName(event.target.value)}
+                  placeholder="Your name"
+                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-purple text-slate-900 dark:text-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                  Reporter Email (Optional)
+                </label>
+                <input
+                  type="email"
+                  value={reporterEmail}
+                  onChange={(event) => setReporterEmail(event.target.value)}
+                  placeholder="you@campus.edu"
+                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-purple text-slate-900 dark:text-white"
+                />
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -192,12 +218,8 @@ export function NewTicketPage() {
                 {!filePreview ? (
                   <>
                     <UploadCloudIcon className="w-10 h-10 text-slate-400 mx-auto mb-3" />
-                    <p className="text-sm font-medium text-slate-900 dark:text-white mb-1">
-                      Click to upload or drag and drop
-                    </p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">
-                      SVG, PNG, JPG or GIF (max. 5MB)
-                    </p>
+                    <p className="text-sm font-medium text-slate-900 dark:text-white mb-1">Click to upload or drag and drop</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">SVG, PNG, JPG or GIF (max. 5MB)</p>
                   </>
                 ) : (
                   <div className="flex flex-col items-center relative z-0">

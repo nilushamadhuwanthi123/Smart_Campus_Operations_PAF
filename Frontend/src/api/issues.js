@@ -35,20 +35,11 @@ export async function uploadFile(file) {
   return parseResponse(response, 'Failed to upload file.');
 }
 
-export async function getStudentIssueReports(studentId) {
-  const response = await fetch(
-    `${API_BASE_URL}/issues?studentId=${encodeURIComponent(studentId)}`
-  );
+export async function getIssueReports(studentId) {
+  const query = studentId ? `?studentId=${encodeURIComponent(studentId)}` : '';
+  const response = await fetch(`${API_BASE_URL}/issues${query}`);
 
   return parseResponse(response, 'Failed to load issue reports.');
-}
-
-export async function getTechnicianIssueReports(technicianId) {
-  const response = await fetch(
-    `${API_BASE_URL}/issues/technician?technicianId=${encodeURIComponent(technicianId)}`
-  );
-
-  return parseResponse(response, 'Failed to load technician scheduled tasks.');
 }
 
 export async function getIssueReportById(id) {
@@ -57,26 +48,8 @@ export async function getIssueReportById(id) {
   return parseResponse(response, 'Failed to load issue report.');
 }
 
-export async function getAllIssueReports() {
-  const response = await fetch(`${API_BASE_URL}/issues/admin/all`);
-
-  return parseResponse(response, 'Failed to load admin issue reports.');
-}
-
-export async function assignIssueReport(id, technicianId) {
-  const response = await fetch(`${API_BASE_URL}/issues/admin/${id}/assign`, {
-    method: 'PATCH',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ technicianId })
-  });
-
-  return parseResponse(response, 'Failed to assign issue report.');
-}
-
 export async function updateIssueReportStatus(id, status) {
-  const response = await fetch(`${API_BASE_URL}/issues/admin/${id}/status`, {
+  const response = await fetch(`${API_BASE_URL}/issues/${id}/status`, {
     method: 'PATCH',
     headers: {
       'Content-Type': 'application/json'
@@ -88,7 +61,7 @@ export async function updateIssueReportStatus(id, status) {
 }
 
 export async function updateIssueReportAdminNote(id, adminNote) {
-  const response = await fetch(`${API_BASE_URL}/issues/admin/${id}/note`, {
+  const response = await fetch(`${API_BASE_URL}/issues/${id}/note`, {
     method: 'PATCH',
     headers: {
       'Content-Type': 'application/json'
@@ -96,5 +69,5 @@ export async function updateIssueReportAdminNote(id, adminNote) {
     body: JSON.stringify({ adminNote })
   });
 
-  return parseResponse(response, 'Failed to save admin note.');
+  return parseResponse(response, 'Failed to save issue note.');
 }

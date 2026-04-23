@@ -1,27 +1,3 @@
-export const mockUsers = {
-  user: {
-    id: 'u1',
-    name: 'Alex Student',
-    email: 'alex@university.edu',
-    role: 'USER',
-    avatar: 'https://i.pravatar.cc/150?u=u1'
-  },
-  admin: {
-    id: 'a1',
-    name: 'Sarah Admin',
-    email: 'sarah@university.edu',
-    role: 'ADMIN',
-    avatar: 'https://i.pravatar.cc/150?u=a1'
-  },
-  tech: {
-    id: 't1',
-    name: 'Mike Tech',
-    email: 'mike@university.edu',
-    role: 'TECHNICIAN',
-    avatar: 'https://i.pravatar.cc/150?u=t1'
-  }
-};
-
 export const mockResources = [
 {
   id: 'r1',
@@ -115,7 +91,6 @@ export const mockBookings = [
 {
   id: 'b1',
   resourceId: 'r3',
-  userId: 'u1',
   date: '2026-03-30',
   startTime: '10:00',
   endTime: '12:00',
@@ -126,7 +101,6 @@ export const mockBookings = [
 {
   id: 'b2',
   resourceId: 'r1',
-  userId: 'u1',
   date: '2026-04-02',
   startTime: '14:00',
   endTime: '16:00',
@@ -137,7 +111,6 @@ export const mockBookings = [
 {
   id: 'b3',
   resourceId: 'r5',
-  userId: 'u1',
   date: '2026-03-25',
   startTime: '09:00',
   endTime: '17:00',
@@ -148,7 +121,6 @@ export const mockBookings = [
 {
   id: 'b4',
   resourceId: 'r6',
-  userId: 'u1',
   date: '2026-04-05',
   startTime: '13:00',
   endTime: '15:00',
@@ -168,7 +140,6 @@ export const mockTickets = [
   category: 'Hardware',
   priority: 'HIGH',
   status: 'OPEN',
-  createdBy: 'u1',
   createdAt: '2026-03-27T09:00:00Z'
 },
 {
@@ -179,8 +150,6 @@ export const mockTickets = [
   category: 'Facilities',
   priority: 'CRITICAL',
   status: 'IN_PROGRESS',
-  createdBy: 'u1',
-  assignedTo: 't1',
   createdAt: '2026-03-28T10:30:00Z'
 },
 {
@@ -192,8 +161,6 @@ export const mockTickets = [
   category: 'Supplies',
   priority: 'LOW',
   status: 'RESOLVED',
-  createdBy: 'u1',
-  assignedTo: 't1',
   createdAt: '2026-03-25T14:00:00Z'
 }];
 
@@ -201,7 +168,6 @@ export const mockTickets = [
 export const mockNotifications = [
 {
   id: 'n1',
-  userId: 'u1',
   title: 'Maintenance Alert',
   message: 'A scheduled maintenance window will begin tonight at 10 PM.',
   type: 'SUCCESS',
@@ -211,7 +177,6 @@ export const mockNotifications = [
 },
 {
   id: 'n2',
-  userId: 'u1',
   title: 'Ticket Updated',
   message: 'Ticket "AC leaking" is now IN_PROGRESS.',
   type: 'INFO',
@@ -221,10 +186,8 @@ export const mockNotifications = [
 },
 {
   id: 'n3',
-  userId: 'u1',
   title: 'System Update',
-  message:
-  'The support portal has been updated with faster technician assignment flow.',
+  message: 'The support portal now has a faster issue triage flow.',
   type: 'ERROR',
   read: true,
   createdAt: '2026-03-27T15:00:00Z',

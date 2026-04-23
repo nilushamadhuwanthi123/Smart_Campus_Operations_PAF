@@ -1,22 +1,14 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import {
-  WrenchIcon,
-  BellIcon,
-  AlertCircleIcon,
-  ChevronRightIcon,
-  SparklesIcon
-} from 'lucide-react';
+import { AlertCircleIcon, BellIcon, ChevronRightIcon, SparklesIcon, WrenchIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
+import { Card, CardContent, CardHeader } from '../../components/ui/Card';
 import { StatusBadge } from '../../components/ui/Badge';
-import { mockTickets, mockNotifications } from '../../data/mockData';
-import { useAuth } from '../../contexts/AuthContext';
-import { studentRoutes } from '../../utils/routes';
+import { mockNotifications, mockTickets } from '../../data/mockData';
+import { appRoutes } from '../../utils/routes';
 
 export function UserDashboard() {
-  const { user } = useAuth();
   const navigate = useNavigate();
 
   const stats = [
@@ -30,7 +22,7 @@ export function UserDashboard() {
     {
       label: 'Unread Alerts',
       value: '3',
-      trend: 'Since your last login',
+      trend: 'Latest updates',
       icon: BellIcon,
       tone: 'bg-brand-mist text-brand-navy'
     }
@@ -42,13 +34,11 @@ export function UserDashboard() {
         <div className="pointer-events-none absolute inset-y-0 right-0 hidden w-1/3 bg-gradient-to-l from-brand-cream/80 to-transparent md:block dark:from-brand-mist/10" />
         <CardContent className="relative flex flex-col gap-6 p-6 sm:p-8 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-2xl">
-            <p className="theme-kicker mb-3">Student Workspace</p>
-            <h1 className="theme-heading text-5xl">
-              Welcome back, {user?.name.split(' ')[0]}
-            </h1>
+            <p className="theme-kicker mb-3">Campus Help Desk</p>
+            <h1 className="theme-heading text-5xl">Welcome to the issue workspace</h1>
             <p className="mt-3 max-w-xl text-sm leading-7 text-slate-500 dark:text-slate-400">
-              Your support requests, updates, and notifications now sit inside the new calm campus
-              palette so the dashboard feels organized instead of noisy.
+              Create new support tickets, monitor progress, and stay in sync with campus service
+              updates in one place.
             </p>
           </div>
 
@@ -56,14 +46,14 @@ export function UserDashboard() {
             <Button
               variant="secondary"
               leftIcon={<AlertCircleIcon className="h-4 w-4" />}
-              onClick={() => navigate(studentRoutes.newTicket)}
+              onClick={() => navigate(appRoutes.newTicket)}
             >
               Report Issue
             </Button>
             <Button
               variant="outline"
               leftIcon={<SparklesIcon className="h-4 w-4" />}
-              onClick={() => navigate(studentRoutes.notifications)}
+              onClick={() => navigate(appRoutes.notifications)}
             >
               Review Alerts
             </Button>
@@ -81,9 +71,7 @@ export function UserDashboard() {
           >
             <Card className="h-full">
               <CardContent className="flex items-center gap-4 p-5">
-                <div
-                  className={`flex h-14 w-14 items-center justify-center rounded-[1.25rem] shadow-soft ${stat.tone}`}
-                >
+                <div className={`flex h-14 w-14 items-center justify-center rounded-[1.25rem] shadow-soft ${stat.tone}`}>
                   <stat.icon className="h-6 w-6" />
                 </div>
                 <div>
@@ -104,13 +92,13 @@ export function UserDashboard() {
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
               <p className="theme-kicker mb-1 !tracking-[0.18em]">Open Work</p>
-              <h3 className="theme-heading text-3xl">My Active Tickets</h3>
+              <h3 className="theme-heading text-3xl">Recent Tickets</h3>
             </div>
             <Button
               variant="ghost"
               size="sm"
               rightIcon={<ChevronRightIcon className="h-4 w-4" />}
-              onClick={() => navigate(studentRoutes.tickets)}
+              onClick={() => navigate(appRoutes.tickets)}
             >
               View All
             </Button>
@@ -123,9 +111,7 @@ export function UserDashboard() {
                 className="flex items-center justify-between gap-4 p-4 transition-colors hover:bg-brand-cream/45 dark:hover:bg-brand-surface-hover/35"
               >
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold text-slate-900 dark:text-white">
-                    {ticket.title}
-                  </p>
+                  <p className="truncate text-sm font-semibold text-slate-900 dark:text-white">{ticket.title}</p>
                   <p className="mt-1 text-xs uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">
                     Ticket {ticket.id}
                   </p>
@@ -175,9 +161,7 @@ export function UserDashboard() {
                   >
                     {notification.title}
                   </p>
-                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                    {notification.message}
-                  </p>
+                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{notification.message}</p>
                   <p className="mt-2 text-[11px] uppercase tracking-[0.14em] text-slate-400">
                     {new Date(notification.createdAt).toLocaleString()}
                   </p>

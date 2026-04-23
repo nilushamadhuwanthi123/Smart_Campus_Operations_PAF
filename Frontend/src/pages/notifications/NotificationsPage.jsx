@@ -1,19 +1,16 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Bell, Wrench, Check, Trash2 } from 'lucide-react';
-import { Button } from '../../components/ui/Button';
+import { AnimatePresence, motion } from 'framer-motion';
+import { Bell, Check, Trash2, Wrench } from 'lucide-react';
 import { Badge } from '../../components/ui/Badge';
+import { Button } from '../../components/ui/Button';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { mockNotifications } from '../../data/mockData';
-import { useAuth } from '../../contexts/AuthContext';
-import { resolvePathForRole } from '../../utils/routes';
 
 const extendedNotifications = [
   ...mockNotifications,
   {
     id: 'n4',
-    userId: 'u1',
     title: 'System Maintenance',
     message: 'The campus portal will be down for maintenance on Sunday 2 AM - 4 AM.',
     type: 'WARNING',
@@ -22,19 +19,17 @@ const extendedNotifications = [
   },
   {
     id: 'n5',
-    userId: 'u1',
     title: 'Platform Notice',
-    message: 'A new help desk workflow is now available in the technician dashboard.',
+    message: 'A new ticket review workflow is now available in the dashboard.',
     type: 'INFO',
     read: true,
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
-    link: '/technician'
+    link: '/dashboard'
   },
   {
     id: 'n6',
-    userId: 'u1',
     title: 'Ticket Resolved',
-    message: 'Your ticket "Whiteboard markers empty" has been marked as RESOLVED.',
+    message: 'Ticket "Whiteboard markers empty" has been marked as RESOLVED.',
     type: 'SUCCESS',
     read: true,
     createdAt: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(),
@@ -42,23 +37,12 @@ const extendedNotifications = [
   },
   {
     id: 'n7',
-    userId: 'u1',
     title: 'Ticket Escalated',
     message: 'A high-priority support ticket was escalated for immediate review.',
     type: 'INFO',
     read: false,
     createdAt: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
     link: '/tickets/t2'
-  },
-  {
-    id: 'n8',
-    userId: 'u1',
-    title: 'Security Alert',
-    message: 'New login detected from an unrecognized device.',
-    type: 'ERROR',
-    read: false,
-    createdAt: new Date(Date.now() - 1000 * 60 * 5).toISOString(),
-    link: '/settings'
   }
 ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
@@ -66,7 +50,6 @@ const filterTabs = ['ALL', 'UNREAD', 'TICKETS', 'SYSTEM'];
 
 export function NotificationsPage() {
   const navigate = useNavigate();
-  const { user } = useAuth();
   const [notifications, setNotifications] = useState(extendedNotifications);
   const [activeTab, setActiveTab] = useState('ALL');
 
@@ -100,7 +83,7 @@ export function NotificationsPage() {
     }
 
     if (notification.link) {
-      navigate(resolvePathForRole(notification.link, user?.role));
+      navigate(notification.link);
     }
   };
 
@@ -138,7 +121,7 @@ export function NotificationsPage() {
           <p className="theme-kicker mb-2">Signal Feed</p>
           <h1 className="theme-heading text-5xl">Notifications</h1>
           <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-            Stay updated on tickets, system notices, and campus alerts with the new shared theme.
+            Stay updated on tickets, system notices, and campus alerts.
           </p>
         </div>
 
@@ -163,12 +146,7 @@ export function NotificationsPage() {
                 }`}
               >
                 {tab.charAt(0) + tab.slice(1).toLowerCase()}
-                {activeTab === tab && (
-                  <motion.div
-                    layoutId="activeTab"
-                    className="absolute inset-0 -z-10 rounded-full"
-                  />
-                )}
+                {activeTab === tab && <motion.div layoutId="activeTab" className="absolute inset-0 -z-10 rounded-full" />}
               </button>
             ))}
           </div>
@@ -198,11 +176,7 @@ export function NotificationsPage() {
                   }`}
                 >
                   <div className="mt-1 flex-shrink-0">
-                    <div
-                      className={`flex h-11 w-11 items-center justify-center rounded-full ${getIconColor(
-                        notification.title
-                      )}`}
-                    >
+                    <div className={`flex h-11 w-11 items-center justify-center rounded-full ${getIconColor(notification.title)}`}>
                       {getIcon(notification.title)}
                     </div>
                   </div>

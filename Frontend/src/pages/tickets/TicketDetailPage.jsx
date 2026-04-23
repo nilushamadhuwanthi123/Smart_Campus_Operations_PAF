@@ -1,23 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import {
-  ArrowLeftIcon,
-  ClockIcon,
-  AlertTriangleIcon,
-  UserIcon,
-  CheckCircle2Icon
-} from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext';
-import { Card, CardContent, CardHeader } from '../../components/ui/Card';
+import { useNavigate, useParams } from 'react-router-dom';
+import { AlertTriangleIcon, ArrowLeftIcon, CheckCircle2Icon, ClockIcon, UserIcon } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
+import { Card, CardContent, CardHeader } from '../../components/ui/Card';
 import { StatusBadge } from '../../components/ui/Badge';
 import { getIssueReportById } from '../../api/issues';
-import { getTicketListPathForRole } from '../../utils/routes';
+import { appRoutes } from '../../utils/routes';
 
 export function TicketDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
   const [ticket, setTicket] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
@@ -73,8 +65,6 @@ export function TicketDetailPage() {
     }
   };
 
-  const returnPath = getTicketListPathForRole(user?.role);
-
   if (isLoading) {
     return <div className="text-center py-12 text-slate-500 dark:text-slate-400">Loading ticket...</div>;
   }
@@ -82,10 +72,8 @@ export function TicketDetailPage() {
   if (errorMessage || !ticket) {
     return (
       <div className="text-center py-12">
-        <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
-          {errorMessage || 'Ticket not found'}
-        </h2>
-        <Button className="mt-4" onClick={() => navigate(returnPath)}>
+        <h2 className="text-xl font-semibold text-slate-900 dark:text-white">{errorMessage || 'Ticket not found'}</h2>
+        <Button className="mt-4" onClick={() => navigate(appRoutes.tickets)}>
           Back to Tickets
         </Button>
       </div>
@@ -95,7 +83,7 @@ export function TicketDetailPage() {
   return (
     <div className="max-w-5xl mx-auto space-y-6">
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="sm" onClick={() => navigate(returnPath)} className="px-2">
+        <Button variant="ghost" size="sm" onClick={() => navigate(appRoutes.tickets)} className="px-2">
           <ArrowLeftIcon className="w-5 h-5" />
         </Button>
         <div className="flex-1">
@@ -105,9 +93,7 @@ export function TicketDetailPage() {
           <div className="flex items-center gap-3 text-sm">
             <span className="text-slate-500 dark:text-slate-400">Ticket #{ticket.id?.toUpperCase()}</span>
             <span className="text-slate-300 dark:text-slate-600">|</span>
-            <span className="text-slate-500 dark:text-slate-400">
-              Created {new Date(ticket.createdAt).toLocaleDateString()}
-            </span>
+            <span className="text-slate-500 dark:text-slate-400">Created {new Date(ticket.createdAt).toLocaleDateString()}</span>
           </div>
         </div>
       </div>
@@ -197,9 +183,7 @@ export function TicketDetailPage() {
                       <CheckCircle2Icon className="w-3 h-3" />
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-slate-900 dark:text-white">
-                        {ticket.status === 'CLOSED' ? 'Closed' : 'Resolved'}
-                      </p>
+                      <p className="text-sm font-medium text-slate-900 dark:text-white">{ticket.status === 'CLOSED' ? 'Closed' : 'Resolved'}</p>
                       <p className="text-xs text-slate-500">{new Date(ticket.updatedAt).toLocaleDateString()}</p>
                     </div>
                   </div>
