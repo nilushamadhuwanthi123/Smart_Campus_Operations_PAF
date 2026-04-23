@@ -13,7 +13,10 @@ public record IssueReportResponse(
         String studentId,
         String studentName,
         String studentEmail,
+        String assignedTechnicianId,
+        String assignedTechnicianName,
         List<String> attachmentUrls,
+        List<IssueCommentResponse> comments,
         String adminNote,
         Instant createdAt,
         Instant updatedAt) {
