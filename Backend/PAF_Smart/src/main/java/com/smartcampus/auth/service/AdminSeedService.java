@@ -7,6 +7,8 @@ import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.smartcampus.auth.entity.AppUser;
 import com.smartcampus.auth.entity.AuthProvider;
@@ -15,6 +17,8 @@ import com.smartcampus.auth.repository.AppUserRepository;
 
 @Component
 public class AdminSeedService implements ApplicationRunner {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(AdminSeedService.class);
 
     private final AppUserRepository appUserRepository;
     private final PasswordEncoder passwordEncoder;
@@ -43,25 +47,31 @@ public class AdminSeedService implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) {
-        String normalizedEmail = userService.normalizeAndValidateEmail(adminEmail);
-        if (appUserRepository.existsByEmailIgnoreCase(normalizedEmail)) {
-            return;
+        try {
+            String normalizedEmail = userService.normalizeAndValidateEmail(adminEmail);
+            if (appUserRepository.existsByEmailIgnoreCase(normalizedEmail)) {
+                return;
+            }
+
+            Instant now = Instant.now();
+
+            AppUser seededAdmin = new AppUser();
+            seededAdmin.setFullName(adminFullName.trim());
+            seededAdmin.setPhoneNumber(adminPhoneNumber.trim());
+            seededAdmin.setEmail(normalizedEmail);
+            seededAdmin.setPasswordHash(passwordEncoder.encode(adminTemporaryPassword));
+            seededAdmin.setRole(UserRole.ADMIN);
+            seededAdmin.setAuthProvider(AuthProvider.LOCAL);
+            seededAdmin.setCreatedAt(now);
+            seededAdmin.setUpdatedAt(now);
+
+            appUserRepository.save(seededAdmin);
+
+            LOGGER.info("Seeded default admin user: {}", normalizedEmail);
+        } catch (Exception exception) {
+            LOGGER.warn(
+                    "Admin seed skipped because database is not reachable at startup. Root cause: {}",
+                    exception.getMessage());
         }
-
-        Instant now = Instant.now();
-
-        AppUser seededAdmin = new AppUser();
-        seededAdmin.setFullName(adminFullName.trim());
-        seededAdmin.setPhoneNumber(adminPhoneNumber.trim());
-        seededAdmin.setEmail(normalizedEmail);
-        seededAdmin.setPasswordHash(passwordEncoder.encode(adminTemporaryPassword));
-        seededAdmin.setRole(UserRole.ADMIN);
-        seededAdmin.setAuthProvider(AuthProvider.LOCAL);
-        seededAdmin.setCreatedAt(now);
-        seededAdmin.setUpdatedAt(now);
-
-        appUserRepository.save(seededAdmin);
-
-        System.out.printf("Seeded default admin user: %s%n", normalizedEmail);
     }
 }

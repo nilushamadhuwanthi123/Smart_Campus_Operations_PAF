@@ -18,8 +18,14 @@ public class MongoConnectionLogger {
     @Bean
     CommandLineRunner logMongoConnectionStatus(MongoTemplate mongoTemplate) {
         return args -> {
-            mongoTemplate.executeCommand("{ ping: 1 }");
-            LOGGER.info("Database connected: MongoDB is available");
+            try {
+                mongoTemplate.executeCommand("{ ping: 1 }");
+                LOGGER.info("Database connected: MongoDB is available");
+            } catch (Exception exception) {
+                LOGGER.warn(
+                        "Database ping failed at startup. Application will continue and retry on demand. Root cause: {}",
+                        exception.getMessage());
+            }
         };
     }
 }

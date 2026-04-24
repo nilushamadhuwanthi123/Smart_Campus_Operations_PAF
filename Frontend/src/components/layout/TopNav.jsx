@@ -14,13 +14,26 @@ import {
 import { AnimatePresence, motion } from 'framer-motion';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
+import { useNotifications } from '../../contexts/NotificationsContext';
 import { Button } from '../ui/Button';
-import { mockNotifications } from '../../data/mockData';
 import { appRoutes } from '../../utils/routes';
+
+function isTicketNotification(notification) {
+  const title = notification?.title?.toLowerCase() || '';
+  const link = notification?.link || '';
+  return link.startsWith('/tickets/') || title.includes('ticket');
+}
+
+function isBookingNotification(notification) {
+  const title = notification?.title?.toLowerCase() || '';
+  const link = notification?.link || '';
+  return link.startsWith('/bookings') || title.includes('booking');
+}
 
 export function TopNav() {
   const { isDark, toggleTheme } = useTheme();
   const { user, logout } = useAuth();
+  const { notifications, unreadCount, isLoading, markAsRead } = useNotifications();
   const location = useLocation();
   const navigate = useNavigate();
   const [showNotifications, setShowNotifications] = useState(false);
@@ -84,7 +97,7 @@ export function TopNav() {
             className="relative rounded-full p-2 text-slate-500 transition-colors hover:bg-brand-cream/80 hover:text-brand-navy dark:hover:bg-brand-surface-hover dark:hover:text-brand-cream"
           >
             <BellIcon className="h-5 w-5" />
-            {mockNotifications.some((notification) => !notification.read) && (
+            {unreadCount > 0 && (
               <span className="absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white dark:ring-brand-surface" />
             )}
           </button>
@@ -105,54 +118,72 @@ export function TopNav() {
                   </div>
 
                   <div className="max-h-80 overflow-y-auto">
-                    {mockNotifications.slice(0, 5).map((notification) => (
-                      <div
-                        key={notification.id}
-                        onClick={() => {
-                          setShowNotifications(false);
-                          if (notification.link) {
-                            navigate(notification.link);
-                          }
-                        }}
-                        className={`flex cursor-pointer gap-3 border-b border-brand-sand/30 p-4 transition-colors last:border-b-0 dark:border-brand-mist/10 ${
-                          !notification.read
-                            ? 'bg-brand-cream/45 hover:bg-brand-cream/70 dark:bg-brand-surface-hover/35 dark:hover:bg-brand-surface-hover/60'
-                            : 'hover:bg-brand-cream/40 dark:hover:bg-brand-surface-hover/35'
-                        }`}
-                      >
-                        <div
-                          className={`mt-1 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full ${
-                            notification.title.includes('Ticket')
-                              ? 'bg-blue-100 text-brand-navy dark:bg-blue-900/30 dark:text-brand-mist'
-                              : notification.title.includes('Maintenance')
-                                ? 'bg-indigo-100 text-brand-navy dark:bg-indigo-900/30 dark:text-brand-sand'
-                                : 'bg-brand-cream text-brand-navy dark:bg-brand-surface-hover dark:text-brand-cream'
-                          }`}
-                        >
-                          {notification.title.includes('Ticket') ? (
-                            <WrenchIcon className="h-4 w-4" />
-                          ) : notification.title.includes('Maintenance') ? (
-                            <CalendarIcon className="h-4 w-4" />
-                          ) : (
-                            <BellIcon className="h-4 w-4" />
-                          )}
-                        </div>
+                    {isLoading ? (
+                      <p className="p-4 text-sm text-slate-500 dark:text-slate-400">Loading notifications...</p>
+                    ) : null}
 
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-semibold text-slate-900 dark:text-white">{notification.title}</p>
-                          <p className="mt-0.5 line-clamp-2 text-xs text-slate-500 dark:text-slate-400">{notification.message}</p>
-                          <p className="mt-1 text-[10px] uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">
-                            {new Date(notification.createdAt).toLocaleDateString()}
-                          </p>
-                        </div>
+                    {!isLoading && notifications.length === 0 ? (
+                      <p className="p-4 text-sm text-slate-500 dark:text-slate-400">No notifications yet.</p>
+                    ) : null}
 
-                        {!notification.read && (
-                          <div className="flex items-center">
-                            <div className="h-2 w-2 rounded-full bg-brand-navy dark:bg-brand-sand" />
-                          </div>
-                        )}
-                      </div>
-                    ))}
+                    {!isLoading
+                      ? notifications.slice(0, 5).map((notification) => {
+                          const ticketNotification = isTicketNotification(notification);
+                          const bookingNotification = isBookingNotification(notification);
+
+                          return (
+                            <div
+                              key={notification.id}
+                              onClick={() => {
+                                setShowNotifications(false);
+                                if (!notification.read) {
+                                  markAsRead(notification.id);
+                                }
+                                if (notification.link) {
+                                  navigate(notification.link);
+                                }
+                              }}
+                              className={`flex cursor-pointer gap-3 border-b border-brand-sand/30 p-4 transition-colors last:border-b-0 dark:border-brand-mist/10 ${
+                                !notification.read
+                                  ? 'bg-brand-cream/45 hover:bg-brand-cream/70 dark:bg-brand-surface-hover/35 dark:hover:bg-brand-surface-hover/60'
+                                  : 'hover:bg-brand-cream/40 dark:hover:bg-brand-surface-hover/35'
+                              }`}
+                            >
+                              <div
+                                className={`mt-1 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full ${
+                                  ticketNotification
+                                    ? 'bg-blue-100 text-brand-navy dark:bg-blue-900/30 dark:text-brand-mist'
+                                    : bookingNotification
+                                      ? 'bg-indigo-100 text-brand-navy dark:bg-indigo-900/30 dark:text-brand-sand'
+                                      : 'bg-brand-cream text-brand-navy dark:bg-brand-surface-hover dark:text-brand-cream'
+                                }`}
+                              >
+                                {ticketNotification ? (
+                                  <WrenchIcon className="h-4 w-4" />
+                                ) : bookingNotification ? (
+                                  <CalendarIcon className="h-4 w-4" />
+                                ) : (
+                                  <BellIcon className="h-4 w-4" />
+                                )}
+                              </div>
+
+                              <div className="min-w-0 flex-1">
+                                <p className="truncate text-sm font-semibold text-slate-900 dark:text-white">{notification.title}</p>
+                                <p className="mt-0.5 line-clamp-2 text-xs text-slate-500 dark:text-slate-400">{notification.message}</p>
+                                <p className="mt-1 text-[10px] uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">
+                                  {new Date(notification.createdAt).toLocaleDateString()}
+                                </p>
+                              </div>
+
+                              {!notification.read && (
+                                <div className="flex items-center">
+                                  <div className="h-2 w-2 rounded-full bg-brand-navy dark:bg-brand-sand" />
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })
+                      : null}
                   </div>
 
                   <div className="border-t border-brand-sand/50 p-2 dark:border-brand-mist/15">

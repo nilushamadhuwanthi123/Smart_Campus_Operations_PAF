@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import {
   BellIcon,
   Building2Icon,
+  CalendarCheckIcon,
   ChevronLeftIcon,
   GraduationCapIcon,
   LayoutDashboardIcon,
@@ -17,6 +18,7 @@ import { useAuth } from '../../contexts/AuthContext';
 const allNavigationItems = [
   { name: 'Dashboard', path: appRoutes.dashboard, icon: LayoutDashboardIcon, roles: ['ADMIN', 'STUDENT', 'TECHNICIAN'] },
   { name: 'Resources', path: appRoutes.resources, icon: Building2Icon, roles: ['ADMIN', 'STUDENT', 'TECHNICIAN'] },
+  { name: 'Bookings', path: appRoutes.bookings, icon: CalendarCheckIcon, roles: ['ADMIN', 'STUDENT', 'TECHNICIAN'] },
   { name: 'Tickets', path: appRoutes.tickets, icon: TicketIcon, roles: ['ADMIN', 'STUDENT', 'TECHNICIAN'] },
   { name: 'User Access', path: appRoutes.adminUsers, icon: ShieldIcon, roles: ['ADMIN'] },
   { name: 'Notifications', path: appRoutes.notifications, icon: BellIcon, roles: ['ADMIN', 'STUDENT', 'TECHNICIAN'] },
