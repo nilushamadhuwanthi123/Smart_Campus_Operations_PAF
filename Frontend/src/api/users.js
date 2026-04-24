@@ -11,6 +11,12 @@ export function createUser(userData) {
   });
 }
 
+export function deleteUser(id) {
+  return apiRequest(`/users/${id}`, {
+    method: 'DELETE'
+  });
+}
+
 export function updateMyProfile(profile) {
   return apiRequest('/users/me', {
     method: 'PATCH',
