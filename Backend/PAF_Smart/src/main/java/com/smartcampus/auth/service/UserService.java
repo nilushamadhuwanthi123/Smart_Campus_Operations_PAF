@@ -61,6 +61,26 @@ public class UserService {
                 .toList();
     }
 
+    public void deleteUser(String id, AppUserPrincipal principal) {
+        if (id == null || id.isBlank()) {
+            throw new ResourceConflictException("User id is required");
+        }
+
+        String normalizedId = id.trim();
+
+        if (principal.getId().equals(normalizedId)) {
+            throw new ResourceConflictException("Admins cannot delete their own account");
+        }
+
+        AppUser user = findUserById(normalizedId);
+
+        if (user.getRole() == UserRole.ADMIN && appUserRepository.countByRole(UserRole.ADMIN) <= 1) {
+            throw new ResourceConflictException("Cannot delete the last admin account");
+        }
+
+        appUserRepository.delete(user);
+    }
+
     public UserResponse getCurrentUser(AppUserPrincipal principal) {
         return toResponse(findUserById(principal.getId()));
     }
@@ -87,6 +107,13 @@ public class UserService {
         }
 
         return user;
+    }
+
+    public List<String> getUserIdsByRole(UserRole role) {
+        return appUserRepository.findByRole(role).stream()
+                .map(AppUser::getId)
+                .filter(id -> id != null && !id.isBlank())
+                .toList();
     }
 
     public AppUser getOrCreateGoogleUser(String email, String name) {
