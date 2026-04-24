@@ -7,9 +7,14 @@ export function Modal({
   title,
   children,
   footer,
-  maxWidth = 'max-w-md'
+  maxWidth = 'max-w-md',
+  zIndexClassName = 'z-50',
+  lockBodyScroll = true
 }) {
   useEffect(() => {
+    if (!lockBodyScroll) {
+      return undefined;
+    }
     if (isOpen) {
       document.body.style.overflow = 'hidden';
     } else {
@@ -18,7 +23,7 @@ export function Modal({
     return () => {
       document.body.style.overflow = 'unset';
     };
-  }, [isOpen]);
+  }, [isOpen, lockBodyScroll]);
   return (
     <AnimatePresence>
       {isOpen &&
@@ -34,9 +39,9 @@ export function Modal({
             opacity: 0
           }}
           onClick={onClose}
-          className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm" />
+          className={`fixed inset-0 ${zIndexClassName} bg-slate-900/50 backdrop-blur-sm`} />
         
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
+          <div className={`fixed inset-0 ${zIndexClassName} flex items-center justify-center p-4 pointer-events-none`}>
             <motion.div
             initial={{
               opacity: 0,
