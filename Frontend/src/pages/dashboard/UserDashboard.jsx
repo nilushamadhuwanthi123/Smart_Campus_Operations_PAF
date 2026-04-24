@@ -17,7 +17,7 @@ import { Card, CardContent, CardHeader } from '../../components/ui/Card';
 import { StatusBadge } from '../../components/ui/Badge';
 import { getIssueReports } from '../../api/issues';
 import { useAuth } from '../../contexts/AuthContext';
-import { mockNotifications } from '../../data/mockData';
+import { useNotifications } from '../../contexts/NotificationsContext';
 import { appRoutes } from '../../utils/routes';
 
 const ACTIVE_STATUSES = new Set(['OPEN', 'IN_PROGRESS']);
@@ -26,6 +26,7 @@ const RESOLVED_STATUSES = new Set(['RESOLVED', 'CLOSED']);
 export function UserDashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { notifications, unreadCount: unreadAlerts, isLoading: isNotificationsLoading } = useNotifications();
 
   const [tickets, setTickets] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -60,11 +61,6 @@ export function UserDashboard() {
       ignore = true;
     };
   }, []);
-
-  const unreadAlerts = useMemo(
-    () => mockNotifications.filter((notification) => !notification.read).length,
-    []
-  );
 
   const counts = useMemo(() => {
     const active = tickets.filter((ticket) => ACTIVE_STATUSES.has(ticket.status)).length;
@@ -221,6 +217,7 @@ export function UserDashboard() {
   }, [counts.active, counts.resolved, counts.total, counts.unassigned, unreadAlerts, user?.role]);
 
   const recentTickets = useMemo(() => tickets.slice(0, 5), [tickets]);
+  const recentNotifications = useMemo(() => notifications.slice(0, 5), [notifications]);
 
   const getPriorityDotColor = (priority) => {
     if (priority === 'CRITICAL') return 'bg-red-500';
@@ -358,33 +355,45 @@ export function UserDashboard() {
           </CardHeader>
 
           <div className="divide-y divide-brand-sand/45 dark:divide-brand-mist/10">
-            {mockNotifications.map((notification) => (
-              <div
-                key={notification.id}
-                className={`flex gap-4 p-4 ${!notification.read ? 'bg-brand-cream/35 dark:bg-brand-surface-hover/20' : ''}`}
-              >
-                <div
-                  className={`mt-1 h-2.5 w-2.5 rounded-full flex-shrink-0 ${
-                    !notification.read ? 'bg-brand-navy dark:bg-brand-sand' : 'bg-transparent'
-                  }`}
-                />
-                <div>
-                  <p
-                    className={`text-sm ${
-                      !notification.read
-                        ? 'font-semibold text-slate-900 dark:text-white'
-                        : 'font-medium text-slate-700 dark:text-slate-300'
-                    }`}
-                  >
-                    {notification.title}
-                  </p>
-                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{notification.message}</p>
-                  <p className="mt-2 text-[11px] uppercase tracking-[0.14em] text-slate-400">
-                    {new Date(notification.createdAt).toLocaleString()}
-                  </p>
-                </div>
+            {isNotificationsLoading ? (
+              <div className="p-4 text-sm text-slate-500 dark:text-slate-400">Loading notifications...</div>
+            ) : null}
+
+            {!isNotificationsLoading && recentNotifications.length === 0 ? (
+              <div className="p-4 text-sm text-slate-500 dark:text-slate-400">
+                No notifications yet. Updates will appear here.
               </div>
-            ))}
+            ) : null}
+
+            {!isNotificationsLoading
+              ? recentNotifications.map((notification) => (
+                  <div
+                    key={notification.id}
+                    className={`flex gap-4 p-4 ${!notification.read ? 'bg-brand-cream/35 dark:bg-brand-surface-hover/20' : ''}`}
+                  >
+                    <div
+                      className={`mt-1 h-2.5 w-2.5 rounded-full flex-shrink-0 ${
+                        !notification.read ? 'bg-brand-navy dark:bg-brand-sand' : 'bg-transparent'
+                      }`}
+                    />
+                    <div>
+                      <p
+                        className={`text-sm ${
+                          !notification.read
+                            ? 'font-semibold text-slate-900 dark:text-white'
+                            : 'font-medium text-slate-700 dark:text-slate-300'
+                        }`}
+                      >
+                        {notification.title}
+                      </p>
+                      <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{notification.message}</p>
+                      <p className="mt-2 text-[11px] uppercase tracking-[0.14em] text-slate-400">
+                        {new Date(notification.createdAt).toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+                ))
+              : null}
           </div>
         </Card>
       </div>

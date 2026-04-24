@@ -1,117 +1,101 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Bell, Check, Trash2, Wrench } from 'lucide-react';
+import { Bell, Calendar, Check, Trash2, Wrench } from 'lucide-react';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { EmptyState } from '../../components/ui/EmptyState';
-import { mockNotifications } from '../../data/mockData';
-
-const extendedNotifications = [
-  ...mockNotifications,
-  {
-    id: 'n4',
-    title: 'System Maintenance',
-    message: 'The campus portal will be down for maintenance on Sunday 2 AM - 4 AM.',
-    type: 'WARNING',
-    read: false,
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString()
-  },
-  {
-    id: 'n5',
-    title: 'Platform Notice',
-    message: 'A new ticket review workflow is now available in the dashboard.',
-    type: 'INFO',
-    read: true,
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
-    link: '/dashboard'
-  },
-  {
-    id: 'n6',
-    title: 'Ticket Resolved',
-    message: 'Ticket "Whiteboard markers empty" has been marked as RESOLVED.',
-    type: 'SUCCESS',
-    read: true,
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(),
-    link: '/tickets/t3'
-  },
-  {
-    id: 'n7',
-    title: 'Ticket Escalated',
-    message: 'A high-priority support ticket was escalated for immediate review.',
-    type: 'INFO',
-    read: false,
-    createdAt: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
-    link: '/tickets/t2'
-  }
-].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+import { useNotifications } from '../../contexts/NotificationsContext';
 
 const filterTabs = ['ALL', 'UNREAD', 'TICKETS', 'SYSTEM'];
 
+function isTicketNotification(notification) {
+  const title = notification?.title?.toLowerCase() || '';
+  const link = notification?.link || '';
+  return link.startsWith('/tickets/') || title.includes('ticket');
+}
+
+function isBookingNotification(notification) {
+  const title = notification?.title?.toLowerCase() || '';
+  const link = notification?.link || '';
+  return link.startsWith('/bookings') || title.includes('booking');
+}
+
+function getIcon(notification) {
+  if (isTicketNotification(notification)) {
+    return <Wrench className="h-5 w-5" />;
+  }
+
+  if (isBookingNotification(notification)) {
+    return <Calendar className="h-5 w-5" />;
+  }
+
+  return <Bell className="h-5 w-5" />;
+}
+
+function getIconColor(notification) {
+  if (isTicketNotification(notification)) {
+    return 'bg-blue-100 text-brand-navy dark:bg-blue-900/30 dark:text-brand-mist';
+  }
+
+  if (isBookingNotification(notification)) {
+    return 'bg-indigo-100 text-brand-navy dark:bg-indigo-900/30 dark:text-brand-sand';
+  }
+
+  return 'bg-brand-cream text-brand-navy dark:bg-brand-surface-hover dark:text-brand-cream';
+}
+
+function formatTimeAgo(dateString) {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+  if (diffInSeconds < 60) return 'Just now';
+  if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
+  if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
+
+  return `${Math.floor(diffInSeconds / 86400)}d ago`;
+}
+
 export function NotificationsPage() {
   const navigate = useNavigate();
-  const [notifications, setNotifications] = useState(extendedNotifications);
+  const { notifications, unreadCount, isLoading, errorMessage, markAsRead, markAllAsRead, deleteNotification } =
+    useNotifications();
   const [activeTab, setActiveTab] = useState('ALL');
 
-  const unreadCount = notifications.filter((notification) => !notification.read).length;
+  const filteredNotifications = useMemo(
+    () =>
+      notifications.filter((notification) => {
+        if (activeTab === 'UNREAD') return !notification.read;
+        if (activeTab === 'TICKETS') return isTicketNotification(notification);
+        if (activeTab === 'SYSTEM') return !isTicketNotification(notification);
+        return true;
+      }),
+    [notifications, activeTab]
+  );
 
   const handleMarkAllRead = () => {
-    setNotifications(notifications.map((notification) => ({ ...notification, read: true })));
+    markAllAsRead();
   };
 
   const handleMarkAsRead = (id, event) => {
     event.stopPropagation();
-    setNotifications(
-      notifications.map((notification) =>
-        notification.id === id ? { ...notification, read: true } : notification
-      )
-    );
+    markAsRead(id);
   };
 
   const handleDelete = (id, event) => {
     event.stopPropagation();
-    setNotifications(notifications.filter((notification) => notification.id !== id));
+    deleteNotification(id);
   };
 
   const handleNotificationClick = (notification) => {
     if (!notification.read) {
-      setNotifications(
-        notifications.map((entry) =>
-          entry.id === notification.id ? { ...entry, read: true } : entry
-        )
-      );
+      markAsRead(notification.id);
     }
 
     if (notification.link) {
       navigate(notification.link);
     }
-  };
-
-  const filteredNotifications = notifications.filter((notification) => {
-    if (activeTab === 'UNREAD') return !notification.read;
-    if (activeTab === 'TICKETS') return notification.title.toLowerCase().includes('ticket');
-    if (activeTab === 'SYSTEM') return !notification.title.toLowerCase().includes('ticket');
-    return true;
-  });
-
-  const getIcon = (title) =>
-    title.toLowerCase().includes('ticket') ? <Wrench className="h-5 w-5" /> : <Bell className="h-5 w-5" />;
-
-  const getIconColor = (title) =>
-    title.toLowerCase().includes('ticket')
-      ? 'bg-blue-100 text-brand-navy dark:bg-blue-900/30 dark:text-brand-mist'
-      : 'bg-brand-cream text-brand-navy dark:bg-brand-surface-hover dark:text-brand-cream';
-
-  const formatTimeAgo = (dateString) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-
-    if (diffInSeconds < 60) return 'Just now';
-    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
-    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
-
-    return `${Math.floor(diffInSeconds / 86400)}d ago`;
   };
 
   return (
@@ -121,7 +105,7 @@ export function NotificationsPage() {
           <p className="theme-kicker mb-2">Signal Feed</p>
           <h1 className="theme-heading text-5xl">Notifications</h1>
           <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-            Stay updated on tickets, system notices, and campus alerts.
+            Stay updated on booking decisions, ticket updates, and new comments.
           </p>
         </div>
 
@@ -158,85 +142,99 @@ export function NotificationsPage() {
           )}
         </div>
 
+        {errorMessage ? (
+          <div className="border-b border-brand-sand/45 bg-red-50/70 px-5 py-3 text-sm text-red-700 dark:border-brand-mist/10 dark:bg-red-900/15 dark:text-red-300">
+            {errorMessage}
+          </div>
+        ) : null}
+
         <div className="divide-y divide-brand-sand/45 dark:divide-brand-mist/10">
           <AnimatePresence mode="popLayout">
-            {filteredNotifications.length > 0 ? (
-              filteredNotifications.map((notification) => (
-                <motion.div
-                  key={notification.id}
-                  layout
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.98 }}
-                  onClick={() => handleNotificationClick(notification)}
-                  className={`group flex cursor-pointer gap-4 p-5 transition-colors ${
-                    !notification.read
-                      ? 'bg-brand-cream/28 hover:bg-brand-cream/55 dark:bg-brand-surface-hover/20 dark:hover:bg-brand-surface-hover/40'
-                      : 'hover:bg-brand-cream/35 dark:hover:bg-brand-surface-hover/28'
-                  }`}
-                >
-                  <div className="mt-1 flex-shrink-0">
-                    <div className={`flex h-11 w-11 items-center justify-center rounded-full ${getIconColor(notification.title)}`}>
-                      {getIcon(notification.title)}
-                    </div>
-                  </div>
+            {isLoading ? (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="p-5 text-sm text-slate-500 dark:text-slate-400">
+                Loading notifications...
+              </motion.div>
+            ) : null}
 
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-start justify-between gap-3">
+            {!isLoading && filteredNotifications.length > 0
+              ? filteredNotifications.map((notification) => (
+                  <motion.div
+                    key={notification.id}
+                    layout
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.98 }}
+                    onClick={() => handleNotificationClick(notification)}
+                    className={`group flex cursor-pointer gap-4 p-5 transition-colors ${
+                      !notification.read
+                        ? 'bg-brand-cream/28 hover:bg-brand-cream/55 dark:bg-brand-surface-hover/20 dark:hover:bg-brand-surface-hover/40'
+                        : 'hover:bg-brand-cream/35 dark:hover:bg-brand-surface-hover/28'
+                    }`}
+                  >
+                    <div className="mt-1 flex-shrink-0">
+                      <div className={`flex h-11 w-11 items-center justify-center rounded-full ${getIconColor(notification)}`}>
+                        {getIcon(notification)}
+                      </div>
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-start justify-between gap-3">
+                        <p
+                          className={`truncate text-sm ${
+                            !notification.read
+                              ? 'font-semibold text-slate-900 dark:text-white'
+                              : 'font-medium text-slate-700 dark:text-slate-300'
+                          }`}
+                        >
+                          {notification.title}
+                        </p>
+                        <span className="flex-shrink-0 text-[11px] uppercase tracking-[0.14em] text-slate-400 dark:text-slate-500">
+                          {formatTimeAgo(notification.createdAt)}
+                        </span>
+                      </div>
                       <p
-                        className={`truncate text-sm ${
+                        className={`mt-1 line-clamp-2 text-sm ${
                           !notification.read
-                            ? 'font-semibold text-slate-900 dark:text-white'
-                            : 'font-medium text-slate-700 dark:text-slate-300'
+                            ? 'text-slate-600 dark:text-slate-300'
+                            : 'text-slate-500 dark:text-slate-400'
                         }`}
                       >
-                        {notification.title}
+                        {notification.message}
                       </p>
-                      <span className="flex-shrink-0 text-[11px] uppercase tracking-[0.14em] text-slate-400 dark:text-slate-500">
-                        {formatTimeAgo(notification.createdAt)}
-                      </span>
                     </div>
-                    <p
-                      className={`mt-1 line-clamp-2 text-sm ${
-                        !notification.read
-                          ? 'text-slate-600 dark:text-slate-300'
-                          : 'text-slate-500 dark:text-slate-400'
-                      }`}
-                    >
-                      {notification.message}
-                    </p>
-                  </div>
 
-                  <div className="flex flex-shrink-0 flex-col items-end justify-between opacity-0 transition-opacity group-hover:opacity-100">
-                    {!notification.read ? (
+                    <div className="flex flex-shrink-0 flex-col items-end justify-between opacity-0 transition-opacity group-hover:opacity-100">
+                      {!notification.read ? (
+                        <button
+                          onClick={(event) => handleMarkAsRead(notification.id, event)}
+                          className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-brand-cream hover:text-brand-navy dark:hover:bg-brand-surface-hover dark:hover:text-brand-cream"
+                          title="Mark as read"
+                        >
+                          <Check className="h-4 w-4" />
+                        </button>
+                      ) : (
+                        <div className="h-7" />
+                      )}
+
                       <button
-                        onClick={(event) => handleMarkAsRead(notification.id, event)}
-                        className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-brand-cream hover:text-brand-navy dark:hover:bg-brand-surface-hover dark:hover:text-brand-cream"
-                        title="Mark as read"
+                        onClick={(event) => handleDelete(notification.id, event)}
+                        className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-400"
+                        title="Delete notification"
                       >
-                        <Check className="h-4 w-4" />
+                        <Trash2 className="h-4 w-4" />
                       </button>
-                    ) : (
-                      <div className="h-7" />
-                    )}
-
-                    <button
-                      onClick={(event) => handleDelete(notification.id, event)}
-                      className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-400"
-                      title="Delete notification"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </div>
-
-                  {!notification.read && (
-                    <div className="flex w-4 flex-shrink-0 items-center justify-center group-hover:hidden">
-                      <div className="h-2.5 w-2.5 rounded-full bg-brand-navy dark:bg-brand-sand" />
                     </div>
-                  )}
-                </motion.div>
-              ))
-            ) : (
+
+                    {!notification.read && (
+                      <div className="flex w-4 flex-shrink-0 items-center justify-center group-hover:hidden">
+                        <div className="h-2.5 w-2.5 rounded-full bg-brand-navy dark:bg-brand-sand" />
+                      </div>
+                    )}
+                  </motion.div>
+                ))
+              : null}
+
+            {!isLoading && filteredNotifications.length === 0 ? (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="py-12">
                 <EmptyState
                   icon={<Bell className="h-8 w-8 text-slate-400" />}
@@ -248,7 +246,7 @@ export function NotificationsPage() {
                   }
                 />
               </motion.div>
-            )}
+            ) : null}
           </AnimatePresence>
         </div>
       </div>
