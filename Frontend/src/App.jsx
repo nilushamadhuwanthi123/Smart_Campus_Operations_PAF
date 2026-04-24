@@ -10,6 +10,7 @@ import { LoginPage } from './pages/auth/LoginPage';
 import { UserManagementPage } from './pages/admin/UserManagementPage';
 import { UserDashboard } from './pages/dashboard/UserDashboard';
 import { NotificationsPage } from './pages/notifications/NotificationsPage';
+import { ResourceCataloguePage } from './pages/resources/ResourceCataloguePage';
 import { SettingsPage } from './pages/settings/SettingsPage';
 import { MyTicketsPage } from './pages/tickets/MyTicketsPage';
 import { NewTicketPage } from './pages/tickets/NewTicketPage';
@@ -28,6 +29,7 @@ export function App() {
               <Route element={<DashboardLayout />}>
                 <Route path="/" element={<Navigate to={appRoutes.dashboard} replace />} />
                 <Route path={appRoutes.dashboard} element={<UserDashboard />} />
+                <Route path={appRoutes.resources} element={<ResourceCataloguePage />} />
                 <Route path={appRoutes.tickets} element={<MyTicketsPage />} />
                 <Route
                   path={appRoutes.newTicket}
