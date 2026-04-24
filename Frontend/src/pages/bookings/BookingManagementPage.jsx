@@ -13,6 +13,7 @@ import {
 import { Badge, StatusBadge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { Card, CardContent, CardHeader } from '../../components/ui/Card';
+import { Modal } from '../../components/ui/Modal';
 import {
   cancelBooking,
   createBooking,
@@ -23,6 +24,7 @@ import {
 } from '../../api/bookings';
 import { getResources } from '../../api/resources';
 import { useAuth } from '../../contexts/AuthContext';
+import { useNotifications } from '../../contexts/NotificationsContext';
 
 const BOOKING_STATUSES = ['PENDING', 'APPROVED', 'REJECTED', 'CANCELLED'];
 
@@ -97,6 +99,7 @@ function addMinutesToTime(timeValue, minutesToAdd) {
 
 export function BookingManagementPage() {
   const { user } = useAuth();
+  const { refreshNotifications } = useNotifications();
   const isAdmin = user?.role === 'ADMIN';
 
   const [resources, setResources] = useState([]);
@@ -115,6 +118,7 @@ export function BookingManagementPage() {
   const [isLoadingQr, setIsLoadingQr] = useState(false);
   const [isVerifyingCheckIn, setIsVerifyingCheckIn] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [createBookingError, setCreateBookingError] = useState(null);
 
   const [qrPayloadInput, setQrPayloadInput] = useState('');
   const [selectedQr, setSelectedQr] = useState(null);
@@ -230,25 +234,26 @@ export function BookingManagementPage() {
 
     setErrorMessage('');
     setSuccessMessage('');
+    setCreateBookingError(null);
 
     if (!form.resourceId) {
-      setErrorMessage('Please select a resource.');
+      setCreateBookingError('Please select a resource.');
       return;
     }
 
     if (!form.date || !form.startTime || !form.endTime) {
-      setErrorMessage('Date and time range are required.');
+      setCreateBookingError('Date and time range are required.');
       return;
     }
 
     if (form.endTime <= form.startTime) {
-      setErrorMessage('End time must be after start time.');
+      setCreateBookingError('End time must be after start time.');
       return;
     }
 
     const parsedAttendees = form.expectedAttendees ? Number(form.expectedAttendees) : null;
     if (parsedAttendees !== null && (!Number.isFinite(parsedAttendees) || parsedAttendees < 1)) {
-      setErrorMessage('Expected attendees must be greater than 0.');
+      setCreateBookingError('Expected attendees must be greater than 0.');
       return;
     }
 
@@ -268,8 +273,9 @@ export function BookingManagementPage() {
       setIsCreateModalOpen(false);
       resetForm();
       await loadBookings(appliedFilters);
+      refreshNotifications({ silent: true });
     } catch (error) {
-      setErrorMessage(error.message || 'Failed to create booking request.');
+      setCreateBookingError(error.message || 'Failed to create booking request.');
     } finally {
       setIsSubmitting(false);
     }
@@ -288,6 +294,7 @@ export function BookingManagementPage() {
 
       setSuccessMessage(`Booking ${decision.toLowerCase()} successfully.`);
       await loadBookings(appliedFilters);
+      refreshNotifications({ silent: true });
     } catch (error) {
       setErrorMessage(error.message || 'Failed to review booking.');
     } finally {
@@ -431,7 +438,10 @@ export function BookingManagementPage() {
 
         <Button
           leftIcon={<PlusIcon className="h-4 w-4" />}
-          onClick={() => setIsCreateModalOpen(true)}
+          onClick={() => {
+            setCreateBookingError(null);
+            setIsCreateModalOpen(true);
+          }}
           disabled={isLoadingResources || filteredResources.length === 0}
         >
           Book Now
@@ -798,6 +808,23 @@ export function BookingManagementPage() {
           ) : null}
         </div>
       ) : null}
+
+      <Modal
+        isOpen={createBookingError != null}
+        onClose={() => setCreateBookingError(null)}
+        title={
+          createBookingError && /capacity|exceed/i.test(createBookingError) ? 'Over capacity' : 'Cannot complete booking'
+        }
+        zIndexClassName="z-[60]"
+        lockBodyScroll={false}
+        footer={
+          <Button type="button" variant="secondary" onClick={() => setCreateBookingError(null)}>
+            OK
+          </Button>
+        }
+      >
+        <p className="text-sm text-slate-600 dark:text-slate-300">{createBookingError}</p>
+      </Modal>
 
       {isCreateModalOpen ? (
         <>

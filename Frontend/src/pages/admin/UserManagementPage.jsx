@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { PlusIcon, RefreshCwIcon, ShieldIcon, UsersIcon } from 'lucide-react';
+import { PlusIcon, RefreshCwIcon, ShieldIcon, Trash2Icon, UsersIcon } from 'lucide-react';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { Card, CardContent, CardHeader } from '../../components/ui/Card';
-import { createUser, getUsers } from '../../api/users';
+import { createUser, deleteUser, getUsers } from '../../api/users';
+import { useAuth } from '../../contexts/AuthContext';
 
 const initialForm = {
   fullName: '',
@@ -14,9 +15,12 @@ const initialForm = {
 };
 
 export function UserManagementPage() {
+  const { user } = useAuth();
+
   const [users, setUsers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
+  const [isDeletingUserId, setIsDeletingUserId] = useState('');
   const [form, setForm] = useState(initialForm);
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
@@ -65,6 +69,37 @@ export function UserManagementPage() {
       setErrorMessage(error.message || 'Failed to create user.');
     } finally {
       setIsCreating(false);
+    }
+  };
+
+  const handleDeleteUser = async (entry) => {
+    if (!entry?.id) {
+      return;
+    }
+
+    if (entry.id === user?.id) {
+      setErrorMessage('You cannot delete your own account.');
+      setSuccessMessage('');
+      return;
+    }
+
+    const isConfirmed = window.confirm(`Delete ${entry.fullName} (${entry.email})? This action cannot be undone.`);
+    if (!isConfirmed) {
+      return;
+    }
+
+    setErrorMessage('');
+    setSuccessMessage('');
+    setIsDeletingUserId(entry.id);
+
+    try {
+      await deleteUser(entry.id);
+      setSuccessMessage('User account deleted successfully.');
+      await loadUsers();
+    } catch (error) {
+      setErrorMessage(error.message || 'Failed to delete user.');
+    } finally {
+      setIsDeletingUserId('');
     }
   };
 
@@ -188,31 +223,50 @@ export function UserManagementPage() {
               <div className="p-8 text-center text-sm text-slate-500 dark:text-slate-400">No users found.</div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[640px] divide-y divide-brand-sand/45 dark:divide-brand-mist/15">
+                <table className="w-full min-w-[700px] divide-y divide-brand-sand/45 dark:divide-brand-mist/15">
                   <thead>
                     <tr className="bg-brand-cream/35 text-left text-xs uppercase tracking-[0.16em] text-slate-500 dark:bg-brand-surface/35 dark:text-slate-400">
                       <th className="px-4 py-3">User</th>
                       <th className="px-4 py-3">Email</th>
                       <th className="px-4 py-3">Phone</th>
                       <th className="px-4 py-3">Role</th>
+                      <th className="px-4 py-3 text-right">Action</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-brand-sand/35 dark:divide-brand-mist/10">
-                    {users.map((entry) => (
-                      <tr key={entry.id} className="text-sm">
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-2">
-                            <ShieldIcon className="h-4 w-4 text-brand-mist" />
-                            <span className="font-medium text-slate-800 dark:text-slate-100">{entry.fullName}</span>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{entry.email}</td>
-                        <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{entry.phoneNumber}</td>
-                        <td className="px-4 py-3">
-                          <Badge variant={getRoleBadgeVariant(entry.role)}>{entry.role}</Badge>
-                        </td>
-                      </tr>
-                    ))}
+                    {users.map((entry) => {
+                      const isDeleting = isDeletingUserId === entry.id;
+                      const isSelf = entry.id === user?.id;
+
+                      return (
+                        <tr key={entry.id} className="text-sm">
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-2">
+                              <ShieldIcon className="h-4 w-4 text-brand-mist" />
+                              <span className="font-medium text-slate-800 dark:text-slate-100">{entry.fullName}</span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{entry.email}</td>
+                          <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{entry.phoneNumber}</td>
+                          <td className="px-4 py-3">
+                            <Badge variant={getRoleBadgeVariant(entry.role)}>{entry.role}</Badge>
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="danger"
+                              isLoading={isDeleting}
+                              disabled={Boolean(isDeletingUserId) || isSelf}
+                              leftIcon={<Trash2Icon className="h-4 w-4" />}
+                              onClick={() => handleDeleteUser(entry)}
+                            >
+                              Delete
+                            </Button>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
