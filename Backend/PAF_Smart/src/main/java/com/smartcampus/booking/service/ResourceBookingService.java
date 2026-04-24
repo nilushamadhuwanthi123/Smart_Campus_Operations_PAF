@@ -26,6 +26,7 @@ import com.google.zxing.common.BitMatrix;
 import com.google.zxing.qrcode.QRCodeWriter;
 import com.smartcampus.auth.entity.UserRole;
 import com.smartcampus.auth.security.AppUserPrincipal;
+import com.smartcampus.auth.service.UserService;
 import com.smartcampus.booking.dto.BookingQrCodeResponse;
 import com.smartcampus.booking.dto.CancelResourceBookingRequest;
 import com.smartcampus.booking.dto.CreateResourceBookingRequest;
@@ -36,6 +37,7 @@ import com.smartcampus.booking.entity.ResourceBooking;
 import com.smartcampus.booking.repository.ResourceBookingRepository;
 import com.smartcampus.exception.ResourceConflictException;
 import com.smartcampus.exception.ResourceNotFoundException;
+import com.smartcampus.notification.service.UserNotificationService;
 import com.smartcampus.resource.entity.CampusResource;
 import com.smartcampus.resource.repository.CampusResourceRepository;
 
@@ -70,12 +72,18 @@ public class ResourceBookingService {
 
     private final ResourceBookingRepository resourceBookingRepository;
     private final CampusResourceRepository campusResourceRepository;
+    private final UserNotificationService userNotificationService;
+    private final UserService userService;
 
     public ResourceBookingService(
             ResourceBookingRepository resourceBookingRepository,
-            CampusResourceRepository campusResourceRepository) {
+            CampusResourceRepository campusResourceRepository,
+            UserNotificationService userNotificationService,
+            UserService userService) {
         this.resourceBookingRepository = resourceBookingRepository;
         this.campusResourceRepository = campusResourceRepository;
+        this.userNotificationService = userNotificationService;
+        this.userService = userService;
     }
 
     public ResourceBookingResponse createBooking(CreateResourceBookingRequest request, AppUserPrincipal principal) {
@@ -125,7 +133,9 @@ public class ResourceBookingService {
         booking.setCreatedAt(now);
         booking.setUpdatedAt(now);
 
-        return toResponse(resourceBookingRepository.save(booking));
+        ResourceBooking savedBooking = resourceBookingRepository.save(booking);
+        createNewBookingNotificationsForAdmins(savedBooking, principal);
+        return toResponse(savedBooking);
     }
 
     public List<ResourceBookingResponse> getBookings(
@@ -227,7 +237,10 @@ public class ResourceBookingService {
         booking.setReviewedAt(now);
         booking.setUpdatedAt(now);
 
-        return toResponse(resourceBookingRepository.save(booking));
+        ResourceBooking savedBooking = resourceBookingRepository.save(booking);
+        createBookingReviewNotification(savedBooking);
+
+        return toResponse(savedBooking);
     }
 
     public ResourceBookingResponse cancelBooking(
@@ -459,6 +472,84 @@ public class ResourceBookingService {
         }
 
         return value.trim();
+    }
+
+    private void createNewBookingNotificationsForAdmins(ResourceBooking booking, AppUserPrincipal requestedBy) {
+        String resourceLabel = booking.getResourceName() == null || booking.getResourceName().isBlank()
+                ? "a resource"
+                : "\"" + booking.getResourceName().trim() + "\"";
+
+        String requester = booking.getBookedByUserName() == null || booking.getBookedByUserName().isBlank()
+                ? "A user"
+                : booking.getBookedByUserName().trim();
+
+        String purposeSnippet = booking.getPurpose() == null || booking.getPurpose().isBlank()
+                ? "(no purpose given)"
+                : "\"" + booking.getPurpose().trim() + "\"";
+
+        String scheduleSummary = formatBookingScheduleSummary(booking);
+
+        String message = String.format(
+                "%s submitted a booking request for %s (%s). Purpose: %s",
+                requester,
+                resourceLabel,
+                scheduleSummary,
+                purposeSnippet);
+
+        for (String adminId : userService.getUserIdsByRole(UserRole.ADMIN)) {
+            if (adminId.equals(requestedBy.getId())) {
+                continue;
+            }
+            userNotificationService.createNotificationForUser(
+                    adminId,
+                    "New Booking Request",
+                    message,
+                    "INFO",
+                    "/bookings");
+        }
+    }
+
+    private String formatBookingScheduleSummary(ResourceBooking booking) {
+        if (booking.getStartTime() == null || booking.getEndTime() == null) {
+            return "schedule pending";
+        }
+
+        LocalDate date = booking.getStartTime().atZone(CAMPUS_ZONE).toLocalDate();
+        LocalTime start = booking.getStartTime().atZone(CAMPUS_ZONE).toLocalTime();
+        LocalTime end = booking.getEndTime().atZone(CAMPUS_ZONE).toLocalTime();
+
+        return date.format(DATE_FORMATTER) + " " + start.format(TIME_FORMATTER) + " - " + end.format(TIME_FORMATTER);
+    }
+
+    private void createBookingReviewNotification(ResourceBooking booking) {
+        String recipientUserId = booking.getBookedByUserId();
+
+        if (recipientUserId == null || recipientUserId.isBlank()) {
+            return;
+        }
+
+        String resourceLabel = booking.getResourceName() == null || booking.getResourceName().isBlank()
+                ? "the requested resource"
+                : "\"" + booking.getResourceName().trim() + "\"";
+
+        boolean approved = STATUS_APPROVED.equals(booking.getStatus());
+        String title = approved ? "Booking Approved" : "Booking Rejected";
+
+        String scheduleSummary = formatBookingScheduleSummary(booking);
+        String message = approved
+                ? "Your booking for " + resourceLabel + " on " + scheduleSummary + " has been approved."
+                : "Your booking for " + resourceLabel + " on " + scheduleSummary + " has been rejected.";
+
+        if (!approved && booking.getAdminReviewReason() != null && !booking.getAdminReviewReason().isBlank()) {
+            message = message + " Reason: " + booking.getAdminReviewReason().trim();
+        }
+
+        userNotificationService.createNotificationForUser(
+                recipientUserId,
+                title,
+                message,
+                approved ? "SUCCESS" : "WARNING",
+                "/bookings");
     }
 
     private String normalizeFilterValue(String value) {
