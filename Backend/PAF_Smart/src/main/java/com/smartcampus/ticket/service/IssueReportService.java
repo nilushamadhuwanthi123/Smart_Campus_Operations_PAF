@@ -67,6 +67,7 @@ public class IssueReportService {
         issueReport.setStudentId(principal.getId());
         issueReport.setStudentName(principal.getFullName());
         issueReport.setStudentEmail(principal.getUsername());
+        issueReport.setPhoneNumber(request.phoneNumber().trim());
         issueReport.setAssignedTechnicianId(null);
         issueReport.setAssignedTechnicianName(null);
         issueReport.setAttachmentUrls(request.attachmentUrls() == null ? List.of() : request.attachmentUrls());
@@ -432,6 +433,7 @@ public class IssueReportService {
                 issueReport.getStudentId(),
                 issueReport.getStudentName(),
                 issueReport.getStudentEmail(),
+                issueReport.getPhoneNumber(),
                 issueReport.getAssignedTechnicianId(),
                 issueReport.getAssignedTechnicianName(),
                 attachmentUrls,

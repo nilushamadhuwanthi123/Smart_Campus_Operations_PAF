@@ -28,6 +28,8 @@ public class IssueReport {
 
     private String studentEmail;
 
+    private String phoneNumber;
+
     private String assignedTechnicianId;
 
     private String assignedTechnicianName;
@@ -112,6 +114,14 @@ public class IssueReport {
 
     public void setStudentEmail(String studentEmail) {
         this.studentEmail = studentEmail;
+    }
+
+    public String getPhoneNumber() {
+        return phoneNumber;
+    }
+
+    public void setPhoneNumber(String phoneNumber) {
+        this.phoneNumber = phoneNumber;
     }
 
     public String getAssignedTechnicianId() {
