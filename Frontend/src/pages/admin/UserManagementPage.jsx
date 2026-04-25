@@ -25,6 +25,24 @@ export function UserManagementPage() {
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
+  const handlePhoneNumberChange = (event) => {
+    const digitsOnly = event.target.value.replace(/\D/g, '').slice(0, 10);
+    setForm((prev) => ({ ...prev, phoneNumber: digitsOnly }));
+  };
+
+  const handlePhoneNumberKeyDown = (event) => {
+    const isShortcut = (event.ctrlKey || event.metaKey) && ['a', 'c', 'v', 'x'].includes(event.key.toLowerCase());
+    const allowedKeys = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Home', 'End'];
+
+    if (isShortcut || allowedKeys.includes(event.key)) {
+      return;
+    }
+
+    if (!/^[0-9]$/.test(event.key) || form.phoneNumber.length >= 10) {
+      event.preventDefault();
+    }
+  };
+
   const loadUsers = async () => {
     setIsLoading(true);
     setErrorMessage('');
@@ -154,8 +172,11 @@ export function UserManagementPage() {
                 <input
                   type="tel"
                   value={form.phoneNumber}
-                  onChange={(event) => setForm((prev) => ({ ...prev, phoneNumber: event.target.value }))}
+                  onChange={handlePhoneNumberChange}
+                  onKeyDown={handlePhoneNumberKeyDown}
                   required
+                  inputMode="numeric"
+                  maxLength={10}
                   pattern="^[0-9]{10}$"
                   title="Phone number must be exactly 10 digits"
                   className="w-full rounded-xl border border-brand-sand/65 bg-white/70 px-4 py-2.5 text-sm text-brand-navy outline-none transition-all focus:border-brand-mist focus:ring-2 focus:ring-brand-mist/40 dark:border-brand-mist/20 dark:bg-brand-surface/55 dark:text-brand-cream"
