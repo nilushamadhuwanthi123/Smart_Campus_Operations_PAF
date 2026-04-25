@@ -13,6 +13,7 @@ public record IssueReportResponse(
         String studentId,
         String studentName,
         String studentEmail,
+        String phoneNumber,
         String assignedTechnicianId,
         String assignedTechnicianName,
         List<String> attachmentUrls,

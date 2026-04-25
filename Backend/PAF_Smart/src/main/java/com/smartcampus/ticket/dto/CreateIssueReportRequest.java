@@ -3,6 +3,7 @@ package com.smartcampus.ticket.dto;
 import java.util.List;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 public record CreateIssueReportRequest(
@@ -19,6 +20,10 @@ public record CreateIssueReportRequest(
 
         @NotBlank(message = "Priority is required")
         String priority,
+
+        @NotBlank(message = "Phone number is required")
+        @Pattern(regexp = "^\\d{10}$", message = "Phone number must be exactly 10 digits")
+        String phoneNumber,
 
         List<String> attachmentUrls) {
 }

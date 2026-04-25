@@ -13,13 +13,15 @@ export function NewTicketPage() {
   const [category, setCategory] = useState('');
   const [priority, setPriority] = useState('LOW');
   const [description, setDescription] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [selectedFile, setSelectedFile] = useState(null);
   const [filePreview, setFilePreview] = useState('');
 
-  const isValid = title && category && description;
+  const isPhoneValid = phoneNumber.length === 10;
+  const isValid = title && category && description && isPhoneValid;
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -42,6 +44,7 @@ export function NewTicketPage() {
         description,
         category,
         priority,
+        phoneNumber,
         attachmentUrls
       });
 
@@ -111,6 +114,28 @@ export function NewTicketPage() {
                 className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-purple dark:border-slate-700 dark:bg-slate-900 dark:text-white"
                 required
               />
+            </div>
+
+            <div>
+              <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
+                Phone number <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                inputMode="numeric"
+                autoComplete="tel"
+                value={phoneNumber}
+                onChange={(event) => {
+                  const digitsOnly = event.target.value.replace(/\D/g, '').slice(0, 10);
+                  setPhoneNumber(digitsOnly);
+                }}
+                placeholder="10-digit contact number"
+                maxLength={10}
+                className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-purple dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                required
+                aria-invalid={phoneNumber.length > 0 && !isPhoneValid}
+              />
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Enter exactly 10 digits (numbers only).</p>
             </div>
 
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">

@@ -340,6 +340,9 @@ export function TicketDetailPage() {
                 <div>
                   <p className="text-sm font-medium text-slate-900 dark:text-white">{ticket.studentName}</p>
                   <p className="text-xs text-slate-500 dark:text-slate-400">{ticket.studentEmail}</p>
+                  {ticket.phoneNumber ? (
+                    <p className="text-xs text-slate-500 dark:text-slate-400">{ticket.phoneNumber}</p>
+                  ) : null}
                 </div>
               </div>
             </CardContent>
